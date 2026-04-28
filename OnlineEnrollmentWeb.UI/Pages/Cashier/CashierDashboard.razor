@@ -1,0 +1,74 @@
+﻿@page "/cashier"
+@layout MainLayout
+@inject PaymentsService PaymentsService
+
+<PageTitle>Cashier Dashboard</PageTitle>
+
+<!-- Welcome Banner -->
+<MudPaper Elevation="0" Style="background:linear-gradient(135deg,#132d6e 0%,#1e3a8a 100%); border-radius:16px; padding:28px 32px; margin-bottom:28px; overflow:hidden; position:relative;">
+    <MudStack Spacing="1">
+        <MudText Typo="Typo.h5" Style="color:#ffffff; font-weight:700;">Good day, Cashier 👋</MudText>
+        <MudText Typo="Typo.body2" Style="color:rgba(255,255,255,0.65);">Here's an overview of payment activity.</MudText>
+    </MudStack>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudGrid Spacing="3">
+        @for (int i = 0; i < 3; i++)
+        {
+            <MudItem xs="12" sm="4">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Style="border-radius:14px;" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="3" Style="border-radius:14px; background:linear-gradient(135deg,#c62828,#e53935); padding:24px; min-height:120px; position:relative; overflow:hidden;">
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.8px; font-size:11px; font-weight:600;">Pending Payments</MudText>
+                    <MudText Typo="Typo.h3" Style="color:#ffffff; font-weight:800; line-height:1;">@_pending</MudText>
+                </MudStack>
+                <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Style="position:absolute; right:16px; bottom:16px; font-size:3.5rem; color:rgba(255,255,255,0.12);" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="3" Style="border-radius:14px; background:linear-gradient(135deg,#1b5e20,#2e7d32); padding:24px; min-height:120px; position:relative; overflow:hidden;">
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.8px; font-size:11px; font-weight:600;">Approved Payments</MudText>
+                    <MudText Typo="Typo.h3" Style="color:#ffffff; font-weight:800; line-height:1;">@_approved</MudText>
+                </MudStack>
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="position:absolute; right:16px; bottom:16px; font-size:3.5rem; color:rgba(255,255,255,0.12);" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="3" Style="border-radius:14px; background:linear-gradient(135deg,#1565c0,#1e88e5); padding:24px; min-height:120px; position:relative; overflow:hidden;">
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.8px; font-size:11px; font-weight:600;">Total Payments</MudText>
+                    <MudText Typo="Typo.h3" Style="color:#ffffff; font-weight:800; line-height:1;">@_total</MudText>
+                </MudStack>
+                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Style="position:absolute; right:16px; bottom:16px; font-size:3.5rem; color:rgba(255,255,255,0.12);" />
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    bool _loading = true;
+    int _pending, _approved, _total;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var r = await PaymentsService.GetAllPaymentsAsync();
+        if (r.Status == 200 && r.Data != null)
+        {
+            _total = r.Data.Count;
+            _pending = r.Data.Count(p => p.PaymentStatus == "Pending");
+            _approved = r.Data.Count(p => p.PaymentStatus == "Approved");
+        }
+        _loading = false;
+    }
+}

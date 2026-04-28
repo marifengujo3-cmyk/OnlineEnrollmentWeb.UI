@@ -1,0 +1,50 @@
+﻿@page "/cashier/all-payments"
+@layout MainLayout
+@inject PaymentsService PaymentsService
+
+<PageTitle>All Payments</PageTitle>
+<MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:700;">All Payments</MudText>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_statusCode != 200)
+{
+    <MudAlert Severity="Severity.Error">Error @_statusCode: @_message</MudAlert>
+}
+else
+{
+    <MudTable Items="_payments" Hover="true" Striped="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Payment ID</MudTh><MudTh>Enrollment ID</MudTh>
+            <MudTh>Amount</MudTh><MudTh>Date</MudTh><MudTh>Status</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.PaymentID</MudTd>
+            <MudTd>@context.EnrollmentID</MudTd>
+            <MudTd>&#8369; @context.Amount.ToString("N2")</MudTd>
+            <MudTd>@context.PaymentDate.ToShortDateString()</MudTd>
+            <MudTd>
+                <MudChip T="String"Size="Size.Small"
+                         Class="@($"status-{context.PaymentStatus.ToLower()}")">
+                    @context.PaymentStatus
+                </MudChip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent><MudText>No payments found.</MudText></NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    List<PaymentModel> _payments = new();
+    bool _loading = true; int _statusCode; string _message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var r = await PaymentsService.GetAllPaymentsAsync();
+        _statusCode = r.Status; _message = r.Message;
+        if (r.Status == 200) _payments = r.Data ?? new();
+        _loading = false;
+    }
+}

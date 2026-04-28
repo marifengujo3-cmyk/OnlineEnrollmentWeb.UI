@@ -1,0 +1,104 @@
+﻿@page "/admin/all-students"
+@layout MainLayout
+@inject StudentsService StudentsService
+@inject NavigationManager nav
+
+<PageTitle>All Students</PageTitle>
+
+<!-- Search + Header Row -->
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">All Students</MudText>
+        <MudText Typo="Typo.body2" Style="color:#6b7a99;">
+            @_students.Count student(s) registered
+        </MudText>
+    </MudStack>
+    <MudTextField @bind-Value="_search"
+                  Placeholder="Search by name or student number..."
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Variant="Variant.Outlined"
+                  Style="max-width:340px;"
+                  Immediate="true" />
+</MudStack>
+
+<!-- Table -->
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Style="border-radius:4px;" />
+}
+else
+{
+    <MudPaper Elevation="2" Style="border-radius:14px; overflow:hidden;">
+        <MudTable Items="_filtered"
+                  Hover="true"
+                  Striped="false"
+                  Dense="false"
+                  Style="border-radius:14px;">
+            <HeaderContent>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Student No.</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Full Name</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Email</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Type</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Student No.">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudAvatar Style="background:#eef2ff; color:#132d6e; font-weight:700; width:32px; height:32px; font-size:12px;">
+                            @(context.FullName?.Length > 0 ? context.FullName[0].ToString().ToUpper() : "S")
+                        </MudAvatar>
+                        <MudText Style="font-weight:600; color:#132d6e; font-size:13px;">@context.StudentNumber</MudText>
+                    </MudStack>
+                </MudTd>
+                <MudTd DataLabel="Full Name">
+                    <MudText Style="font-weight:500; color:#2d3748; font-size:13.5px;">@context.FullName</MudText>
+                </MudTd>
+                <MudTd DataLabel="Email">
+                    <MudText Style="color:#6b7a99; font-size:13px;">@context.Email</MudText>
+                </MudTd>
+                <MudTd DataLabel="Type">
+                    <MudChip T="string" Size="Size.Small"
+                             Style="background:#eef2ff; color:#132d6e; font-weight:600; font-size:12px;">
+                        @context.StudentType
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Size="Size.Small"
+                             Class="@($"status-{context.Status?.ToLower() ?? "unknown"}")">
+                        @context.Status
+                    </MudChip>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudStack AlignItems="AlignItems.Center" Style="padding:48px;">
+                    <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:3rem; color:#c7d2f0;" />
+                    <MudText Style="color:#6b7a99; font-weight:500;">No students found.</MudText>
+                </MudStack>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+}
+
+@code {
+    List<StudentModel> _students = new();
+    bool _loading = true;
+    int _statusCode;
+    string _message = string.Empty;
+    string _search = string.Empty;
+
+    IEnumerable<StudentModel> _filtered =>
+        string.IsNullOrWhiteSpace(_search) ? _students
+        : _students.Where(s =>
+            (s.FullName?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (s.StudentNumber?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var r = await StudentsService.GetAllStudentsAsync();
+        _statusCode = r.Status;
+        _message = r.Message;
+        if (r.Status == 200) _students = r.Data ?? new();
+        _loading = false;
+    }
+}

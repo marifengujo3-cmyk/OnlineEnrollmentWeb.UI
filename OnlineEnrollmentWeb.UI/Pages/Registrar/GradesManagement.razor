@@ -1,0 +1,236 @@
+﻿@page "/registrar/grades"
+@layout MainLayout
+@inject GradesService GradesService
+@inject ISnackbar Snackbar
+@inject NavigationManager nav
+
+<PageTitle>Grades Management</PageTitle>
+
+<!-- Search Student Card -->
+<MudPaper Elevation="2" Style="border-radius:14px; padding:24px; margin-bottom:20px;">
+    <MudStack Spacing="1" Class="mb-3">
+        <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">Grades Management</MudText>
+        <MudText Typo="Typo.body2" Style="color:#6b7a99;">Search a student to view and manage their grades.</MudText>
+    </MudStack>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        <MudTextField @bind-Value="_studentIdInput"
+                      Label="Enter Student ID"
+                      Variant="Variant.Outlined"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Badge"
+                      AdornmentColor="Color.Primary"
+                      Style="max-width:280px;" />
+        <MudButton Variant="Variant.Filled"
+                   Style="background:linear-gradient(135deg,#132d6e,#1e3a8a); color:#ffffff; border-radius:10px; text-transform:none; font-weight:600; height:56px; padding:0 28px;"
+                   StartIcon="@Icons.Material.Filled.Search"
+                   OnClick="LoadGradesAsync">
+            Load Grades
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
+@if (_currentStudentId > 0)
+{
+    <!-- Add Grade Card -->
+    <MudPaper Elevation="2" Style="border-radius:14px; overflow:hidden; margin-bottom:20px;">
+        <div style="background:linear-gradient(135deg,#132d6e,#1e3a8a); padding:16px 24px;">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.AddCircle" Style="color:#ffffff;" />
+                <MudText Typo="Typo.subtitle1" Style="color:#ffffff; font-weight:700;">Add New Grade</MudText>
+                <MudSpacer />
+                <MudChip T="string" Size="Size.Small" Style="background:rgba(255,255,255,0.15); color:#ffffff; font-weight:600;">
+                    Student ID: @_currentStudentId
+                </MudChip>
+            </MudStack>
+        </div>
+        <div style="padding:24px;">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="_newGrade.SubjectName"
+                                  Label="Subject Name"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.MenuBook"
+                                  AdornmentColor="Color.Primary" />
+                </MudItem>
+                <MudItem xs="12" sm="2">
+                    <MudTextField @bind-Value="_newGrade.SchoolYear"
+                                  Label="School Year"
+                                  Variant="Variant.Outlined"
+                                  Placeholder="e.g. 2025-2026" />
+                </MudItem>
+                <MudItem xs="12" sm="2">
+                    <MudTextField @bind-Value="_newGrade.Semester"
+                                  Label="Semester"
+                                  Variant="Variant.Outlined"
+                                  Placeholder="e.g. 1st" />
+                </MudItem>
+                <MudItem xs="12" sm="2">
+                    <MudNumericField @bind-Value="_newGrade.Grade"
+                                     Label="Grade"
+                                     Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="2">
+                    <MudSelect @bind-Value="_newGrade.Remarks"
+                               Label="Remarks"
+                               Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("Passed")">Passed</MudSelectItem>
+                        <MudSelectItem Value="@("Failed")">Failed</MudSelectItem>
+                        <MudSelectItem Value="@("Incomplete")">Incomplete</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+            <MudButton Variant="Variant.Filled"
+                       Style="background:linear-gradient(135deg,#132d6e,#1e3a8a); color:#ffffff; border-radius:10px; text-transform:none; font-weight:600; margin-top:16px; padding:8px 28px;"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="AddGradeAsync">
+                Add Grade
+            </MudButton>
+        </div>
+    </MudPaper>
+
+    <!-- Grades Table -->
+    <MudPaper Elevation="2" Style="border-radius:14px; overflow:hidden;">
+        <MudTable Items="_grades"
+                  Hover="true"
+                  Striped="false"
+                  Dense="false"
+                  Style="border-radius:14px;">
+            <HeaderContent>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Subject</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">School Year</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Semester</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Grade</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Remarks</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Subject">
+                    <MudText Style="font-weight:600; color:#132d6e; font-size:13px;">@context.SubjectName</MudText>
+                </MudTd>
+                <MudTd DataLabel="School Year">
+                    <MudText Style="color:#2d3748; font-size:13px;">@context.SchoolYear</MudText>
+                </MudTd>
+                <MudTd DataLabel="Semester">
+                    <MudText Style="color:#2d3748; font-size:13px;">@context.Semester</MudText>
+                </MudTd>
+                <MudTd DataLabel="Grade">
+                    <MudText Style="font-weight:700; color:#132d6e; font-size:14px;">@context.Grade</MudText>
+                </MudTd>
+                <MudTd DataLabel="Remarks">
+                    <MudChip T="string" Size="Size.Small"
+                             Class="@(context.Remarks == "Passed" ? "status-approved"
+                                                                                          : context.Remarks == "Failed" ? "status-rejected"
+                                                                                          : "status-pending")">
+                        @context.Remarks
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Style="border-color:#132d6e; color:#132d6e; border-radius:8px; text-transform:none; font-weight:600; font-size:12px;"
+                               StartIcon="@Icons.Material.Filled.Edit"
+                               OnClick="() => StartEdit(context)">
+                        Edit
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudStack AlignItems="AlignItems.Center" Style="padding:48px;">
+                    <MudIcon Icon="@Icons.Material.Filled.School" Style="font-size:3rem; color:#c7d2f0;" />
+                    <MudText Style="color:#6b7a99; font-weight:500;">No grades found for this student.</MudText>
+                </MudStack>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+}
+
+<!-- Edit Dialog -->
+<MudDialog IsVisible="_editGrade != null" IsVisibleChanged="v => { if(!v) _editGrade = null; }">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Style="color:#132d6e;" />
+            <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">Edit Grade</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        @if (_editGrade != null)
+        {
+            <MudText Typo="Typo.body2" Style="color:#6b7a99; margin-bottom:16px;">
+                Editing: <strong style="color:#132d6e;">@_editGrade.SubjectName</strong>
+            </MudText>
+            <MudNumericField @bind-Value="_editGrade.Grade"
+                             Label="Grade"
+                             Variant="Variant.Outlined"
+                             Class="mb-3" />
+            <MudSelect @bind-Value="_editGrade.Remarks"
+                       Label="Remarks"
+                       Variant="Variant.Outlined">
+                <MudSelectItem Value="@("Passed")">Passed</MudSelectItem>
+                <MudSelectItem Value="@("Failed")">Failed</MudSelectItem>
+                <MudSelectItem Value="@("Incomplete")">Incomplete</MudSelectItem>
+            </MudSelect>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined"
+                   Style="border-radius:8px; text-transform:none; font-weight:600;"
+                   OnClick="() => _editGrade = null">
+            Cancel
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Style="background:linear-gradient(135deg,#132d6e,#1e3a8a); color:#ffffff; border-radius:8px; text-transform:none; font-weight:600;"
+                   OnClick="SaveEditAsync">
+            Save Changes
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    string _studentIdInput = string.Empty;
+    List<GradesModel> _grades = new();
+    AddGradeRequest _newGrade = new();
+    GradesModel? _editGrade;
+    int _currentStudentId;
+
+    async Task LoadGradesAsync()
+    {
+        if (!int.TryParse(_studentIdInput, out _currentStudentId)) return;
+        var r = await GradesService.GetGradesByStudentAsync(_currentStudentId);
+        if (r.Status == 200)
+        {
+            _grades = r.Data ?? new();
+            _newGrade = new() { StudentID = _currentStudentId };
+        }
+        else Snackbar.Add($"Error {r.Status}: {r.Message}", Severity.Error);
+    }
+
+    async Task AddGradeAsync()
+    {
+        var r = await GradesService.AddGradeAsync(_newGrade);
+        Snackbar.Add(r.Status == 200 ? "Grade added!" : $"Error {r.Status}: {r.Message}",
+            r.Status == 200 ? Severity.Success : Severity.Error);
+        if (r.Status == 200) await LoadGradesAsync();
+    }
+
+    void StartEdit(GradesModel g) => _editGrade = new GradesModel
+    {
+        GradeID = g.GradeID,
+        StudentID = g.StudentID,
+        SubjectName = g.SubjectName,
+        SchoolYear = g.SchoolYear,
+        Semester = g.Semester,
+        Grade = g.Grade,
+        Remarks = g.Remarks
+    };
+
+    async Task SaveEditAsync()
+    {
+        if (_editGrade == null) return;
+        var r = await GradesService.UpdateGradeAsync(_editGrade.GradeID, _editGrade);
+        Snackbar.Add(r.Status == 200 ? "Grade updated!" : $"Error {r.Status}: {r.Message}",
+            r.Status == 200 ? Severity.Success : Severity.Error);
+        _editGrade = null;
+        if (r.Status == 200) await LoadGradesAsync();
+    }
+}

@@ -1,0 +1,185 @@
+﻿@page "/admin/pending-documents"
+@layout MainLayout
+@inject DocumentsService DocumentsService
+@inject ISnackbar Snackbar
+@inject NavigationManager nav
+
+<PageTitle>Pending Documents</PageTitle>
+<MudThemeProvider />
+
+<MudLayout>
+    <!-- Sidebar -->
+    <MudDrawer Open="true" Variant="DrawerVariant.Persistent" Elevation="2"
+               Style="background: linear-gradient(180deg, #132d6e 0%, #1a3572 60%, #1e3a8a 100%); border-right: 1px solid rgba(255,255,255,0.08); width:240px;">
+
+        <MudDrawerHeader Style="padding: 20px 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex; flex-direction:column; align-items:center; width:100%; text-align:center;">
+                <MudImage Src="/images/logo.jpg" Alt="ACLC Logo" Width="64" Height="64"
+                          Style="border-radius: 12px; filter: drop-shadow(0 2px 10px rgba(0,0,0,0.4)); margin-bottom: 10px;" />
+                <MudText Typo="Typo.h6" Style="color:#ffffff; font-weight:800; letter-spacing:3px; line-height:1; margin-bottom:2px;">
+                    ACLC
+                </MudText>
+                <MudText Typo="Typo.caption" Style="color:#e8253a; font-weight:700; letter-spacing:1.5px; line-height:1.3; margin-bottom:6px;">
+                    COLLEGE OF MANDAUE
+                </MudText>
+                <div style="width:40px; height:2px; background:#cc1f2e; border-radius:2px; margin-bottom:6px;"></div>
+                <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.4); font-size:9px; letter-spacing:2.5px; text-transform:uppercase;">
+                    Admin Portal
+                </MudText>
+            </div>
+        </MudDrawerHeader>
+
+        <MudNavMenu Style="padding: 12px 0;">
+            <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.3); letter-spacing:3px; text-transform:uppercase; padding: 16px 20px 6px; font-size:10px;">Main</MudText>
+            <MudNavLink Href="/admin" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">Dashboard</MudNavLink>
+            <MudNavLink Href="/admin/pending-enrollments" Icon="@Icons.Material.Filled.HowToReg" Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">Pending Enrollments</MudNavLink>
+            <MudNavLink Href="/admin/pending-documents" Icon="@Icons.Material.Filled.Description" Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">Documents</MudNavLink>
+            <MudNavLink Href="/admin/create-student-account" Icon="@Icons.Material.Filled.PersonAdd" Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">Create Student</MudNavLink>
+            <MudNavLink Href="/admin/all-students" Icon="@Icons.Material.Filled.People" Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">Students</MudNavLink>
+        </MudNavMenu>
+
+        <MudSpacer />
+        <MudDivider Style="border-color:rgba(255,255,255,0.08); margin: 0 16px;" />
+        <div style="padding: 16px;">
+            <MudButton FullWidth="true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Logout" OnClick="Logout"
+                       Style="color:rgba(255,255,255,0.6); border-color:rgba(255,255,255,0.15); border-radius:10px; text-transform:uppercase; letter-spacing:1px; font-size:12px;">
+                Logout
+            </MudButton>
+        </div>
+    </MudDrawer>
+
+    <MudMainContent Style="background:#f0f4ff; min-height:100vh;">
+        <MudAppBar Elevation="0" Style="background:#ffffff; border-bottom:1px solid #e8edf5; left:240px; width:calc(100% - 240px);">
+            <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">Pending Documents</MudText>
+            <MudSpacer />
+            <MudText Typo="Typo.body2" Style="color:#6b7a99; margin-right:12px;">Academic Year 2025 – 2026</MudText>
+            <MudAvatar Style="background:#cc1f2e; color:white; font-weight:700;" Size="Size.Small">A</MudAvatar>
+        </MudAppBar>
+
+        <div class="main-container">
+            <div class="page-header">
+                <MudText Typo="Typo.h5" Class="page-title">Pending Documents</MudText>
+                <MudText Typo="Typo.body2" Class="page-subtitle">Review and approve submitted student documents</MudText>
+            </div>
+
+            @if (_loading)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" Rounded="true" Class="mb-4" />
+            }
+            else if (_statusCode != 200)
+            {
+                <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Style="border-radius:10px;">
+                    Error @_statusCode: @_message
+                </MudAlert>
+            }
+            else if (!_docs.Any())
+            {
+                <MudPaper Elevation="0" Style="border-radius:14px; border:1px solid #e2e8f4; padding:48px; text-align:center;">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Style="font-size:3rem; color:#065F46; display:block; margin:0 auto 12px;" />
+                    <MudText Typo="Typo.subtitle1" Style="font-weight:700; color:#1a202c;">All caught up!</MudText>
+                    <MudText Typo="Typo.body2" Style="color:#6b7a99;">No pending documents at the moment.</MudText>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Elevation="0" Style="border-radius:14px; border:1px solid #e2e8f4; overflow:hidden;">
+                    <MudTable Items="_docs" Hover="true" Dense="false"
+                              Breakpoint="Breakpoint.Sm" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>Doc ID</MudTh>
+                            <MudTh>Student ID</MudTh>
+                            <MudTh>Document Type</MudTh>
+                            <MudTh>Uploaded</MudTh>
+                            <MudTh>Status</MudTh>
+                            <MudTh>Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Doc ID">
+                                <span style="font-family:monospace; font-size:13px; color:#6b7a99;">#@context.DocumentID</span>
+                            </MudTd>
+                            <MudTd DataLabel="Student ID">
+                                <span style="font-family:monospace; font-size:13px; color:#6b7a99;">@context.StudentID</span>
+                            </MudTd>
+                            <MudTd DataLabel="Document Type">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:30px; height:30px; background:#eef2ff; border-radius:7px; display:flex; align-items:center; justify-content:center;">
+                                        <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Style="color:#132d6e; font-size:1rem;" />
+                                    </div>
+                                    <MudText Typo="Typo.body2" Style="font-weight:500;">@context.DocumentType</MudText>
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="Uploaded">
+                                <MudText Typo="Typo.body2" Style="color:#6b7a99;">@context.UploadedDate.ToString("MMM dd, yyyy")</MudText>
+                            </MudTd>
+                            <MudTd DataLabel="Status">
+                                <MudChip T="string" Size="Size.Small"
+                                         Class="@(context.IsApproved ? "status-approved" : "status-pending")">
+                                    @(context.IsApproved ? "Approved" : "Pending")
+                                </MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Actions">
+                                @if (!context.IsApproved)
+                                {
+                                    <MudButton Variant="Variant.Filled" Size="Size.Small"
+                                               Style="background:#065F46; color:white; border-radius:8px; text-transform:none; font-weight:600;"
+                                               StartIcon="@Icons.Material.Filled.CheckCircle"
+                                               OnClick="() => ApproveDocAsync(context)"
+                                               Disabled="_approvingIds.Contains(context.DocumentID)">
+                                        @if (_approvingIds.Contains(context.DocumentID))
+                                        {
+                                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+                                        }
+                                        Approve
+                                    </MudButton>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Style="color:#6b7a99; display:flex; align-items:center; gap:4px;">
+                                        <MudIcon Icon="@Icons.Material.Filled.Done" Size="Size.Small" /> Done
+                                    </MudText>
+                                }
+                            </MudTd>
+                        </RowTemplate>
+                        <NoRecordsContent>
+                            <MudText Style="text-align:center; padding:2rem; color:#6b7a99;">No pending documents.</MudText>
+                        </NoRecordsContent>
+                    </MudTable>
+                </MudPaper>
+            }
+        </div>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    List<DocumentModel> _docs = new();
+    HashSet<int> _approvingIds = new();
+    bool _loading = true;
+    int _statusCode;
+    string _message = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    async Task LoadAsync()
+    {
+        _loading = true;
+        var r = await DocumentsService.GetAllDocumentsAsync();
+        _statusCode = r.Status;
+        _message = r.Message;
+        if (r.Status == 200)
+            _docs = r.Data?.Where(d => !d.IsApproved).ToList() ?? new();
+        _loading = false;
+    }
+
+    async Task ApproveDocAsync(DocumentModel doc)
+    {
+        _approvingIds.Add(doc.DocumentID);
+        StateHasChanged();
+        var r = await DocumentsService.ApproveDocumentAsync(doc);
+        Snackbar.Add(r.Status == 200 ? "Document approved!" : $"Error {r.Status}: {r.Message}",
+            r.Status == 200 ? Severity.Success : Severity.Error);
+        _approvingIds.Remove(doc.DocumentID);
+        if (r.Status == 200) await LoadAsync();
+    }
+
+    private void Logout() => nav.NavigateTo("/login");
+}

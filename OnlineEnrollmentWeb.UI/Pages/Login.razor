@@ -1,0 +1,130 @@
+﻿@page "/"
+@page "/login"
+@layout LoginLayout
+@inject AuthService AuthService
+@inject NavigationManager Nav
+
+<PageTitle>Admin Login</PageTitle>
+
+<MudThemeProvider />
+
+<div style="background: linear-gradient(135deg, #132d6e 0%, #1a3572 50%, #1e3a8a 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
+
+    <MudPaper Elevation="25" Style="display: flex; width: 100%; max-width: 960px; min-height: 540px; border-radius: 20px; overflow: hidden;">
+
+        <!-- Left branding panel -->
+        <div style="flex: 1; background: linear-gradient(160deg, #1e3a8a 0%, #1a3572 60%, #132d6e 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 40px; border-right: 1px solid rgba(255,255,255,0.08);">
+
+            <MudImage Src="/images/logo.jpg" Alt="ACLC Logo" Width="110" Height="110"
+                      ObjectFit="ObjectFit.Contain"
+                      Style="border-radius: 12px; margin-bottom: 24px; filter: drop-shadow(0 4px 16px rgba(0,0,0,0.4));" />
+
+            <MudText Typo="Typo.h3" Align="Align.Center"
+                     Style="font-weight: 800; color: #ffffff; letter-spacing: 2px; line-height: 1;">
+                ACLC
+            </MudText>
+            <MudText Typo="Typo.h4" Align="Align.Center"
+                     Style="font-weight: 800; color: #e8253a; letter-spacing: 2px; line-height: 1; margin-bottom: 4px;">
+                COLLEGE
+            </MudText>
+            <MudText Typo="Typo.caption" Align="Align.Center"
+                     Style="letter-spacing: 5px; color: rgba(255,255,255,0.55); font-weight: 600; text-transform: uppercase;">
+                OF MANDAUE CITY
+            </MudText>
+
+            <MudDivider Style="width: 60px; border-color: #cc1f2e; border-width: 2px; margin: 24px auto;" />
+
+            <MudText Typo="Typo.caption" Align="Align.Center"
+                     Style="letter-spacing: 3px; color: rgba(255,255,255,0.55); font-weight: 600; text-transform: uppercase; text-align: center;">
+                Online Enrollment &amp;<br />Downpayment System
+            </MudText>
+
+            <MudText Typo="Typo.caption" Align="Align.Center"
+                     Style="color: rgba(255,255,255,0.35); margin-top: 8px; letter-spacing: 1px;">
+                Academic Year 2025 – 2026
+            </MudText>
+        </div>
+
+        <!-- Right form panel -->
+        <div style="width: 400px; background: rgba(19,45,110,0.95); display: flex; flex-direction: column; justify-content: center; padding: 52px 44px;">
+
+            <MudText Typo="Typo.h5" Style="font-weight: 700; color: #ffffff; letter-spacing: 1px; margin-bottom: 4px;">
+                Welcome
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.55); margin-bottom: 32px; display: block;">
+                Sign in to your account to continue
+            </MudText>
+
+            <MudTextField @bind-Value="_model.Username"
+                          Label="Email / Username"
+                          Variant="Variant.Filled"
+                          Margin="Margin.Dense"
+                          FullWidth="true"
+                          Class="mb-3" />
+
+            <MudTextField @bind-Value="_model.Password"
+                          Label="Password"
+                          Variant="Variant.Filled"
+                          Margin="Margin.Dense"
+                          InputType="@_pwdType"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@_pwdIcon"
+                          OnAdornmentClick="() => _showPwd = !_showPwd"
+                          FullWidth="true"
+                          Class="mb-4" />
+
+            @if (_statusCode != 0)
+            {
+                <MudAlert Severity="@_severity" Dense="true" Class="mb-3">@_message</MudAlert>
+            }
+
+            <MudButton FullWidth="true"
+                       OnClick="HandleLogin"
+                       Disabled="_loading"
+                       Style="background: linear-gradient(135deg, #0072CE, #1565c0); color: white; font-weight: 700; border-radius: 10px; height: 46px; font-size: 15px; text-transform: none;">
+                @if (_loading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                }
+                Sign In
+            </MudButton>
+        </div>
+
+    </MudPaper>
+</div>
+
+@code {
+    private LoginModel _model = new();
+    private bool _loading;
+    private bool _showPwd;
+    private int _statusCode;
+    private string _message = string.Empty;
+    private Severity _severity = Severity.Error;
+
+    private InputType _pwdType => _showPwd ? InputType.Text : InputType.Password;
+    private string _pwdIcon => _showPwd
+        ? Icons.Material.Filled.VisibilityOff
+        : Icons.Material.Filled.Visibility;
+
+    private async Task HandleLogin()
+    {
+        _loading = true;
+        var result = await AuthService.LoginAsync(_model);
+
+        if (result.Status == 200)
+        {
+            var role = result.Data.Role;
+            if (role == "Admin") Nav.NavigateTo("/admin");
+            else if (role == "Registrar") Nav.NavigateTo("/registrar");
+            else if (role == "Cashier") Nav.NavigateTo("/cashier");
+            else Nav.NavigateTo("/");
+        }
+        else
+        {
+            _message = result.Message;
+            _statusCode = 1;
+            _severity = Severity.Error;
+        }
+        _loading = false;
+    }
+}

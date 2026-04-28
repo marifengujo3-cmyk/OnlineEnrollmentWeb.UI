@@ -1,0 +1,130 @@
+﻿@page "/registrar/pending-enrollment"
+@layout MainLayout
+@inject EnrollmentService EnrollmentService
+@inject ISnackbar Snackbar
+@inject NavigationManager nav
+
+<PageTitle>Pending Enrollment</PageTitle>
+
+<!-- Header Row -->
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">Pending Enrollments</MudText>
+        <MudText Typo="Typo.body2" Style="color:#6b7a99;">
+            @_enrollments.Count enrollment(s) awaiting review
+        </MudText>
+    </MudStack>
+    <MudChip T="string" Style="background:#FFF3CD; color:#856404; font-weight:600; border:1px solid #ffc107;">
+        <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Style="font-size:1rem; margin-right:4px;" />
+        @_enrollments.Count Pending
+    </MudChip>
+</MudStack>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Style="border-radius:4px;" />
+}
+else
+{
+    <MudPaper Elevation="2" Style="border-radius:14px; overflow:hidden;">
+        <MudTable Items="_enrollments"
+                  Hover="true"
+                  Striped="false"
+                  Dense="false"
+                  Style="border-radius:14px;">
+            <HeaderContent>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">ID</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Student ID</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Course</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">School Year</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Semester</MudTh>
+                <MudTh Style="background:#f5f8ff; color:#6b7a99; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px;">Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">
+                    <MudText Style="font-weight:600; color:#132d6e; font-size:13px;">#@context.EnrollmentID</MudText>
+                </MudTd>
+                <MudTd DataLabel="Student ID">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudAvatar Style="background:#eef2ff; color:#132d6e; font-weight:700; width:32px; height:32px; font-size:12px;">
+                            @(context.StudentID.ToString()[0])
+                        </MudAvatar>
+                        <MudText Style="font-weight:500; color:#2d3748; font-size:13px;">@context.StudentID</MudText>
+                    </MudStack>
+                </MudTd>
+                <MudTd DataLabel="Course">
+                    <MudChip T="string" Size="Size.Small"
+                             Style="background:#eef2ff; color:#132d6e; font-weight:600; font-size:12px;">
+                        @context.Course
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="School Year">
+                    <MudText Style="color:#2d3748; font-size:13px;">@context.SchoolYear</MudText>
+                </MudTd>
+                <MudTd DataLabel="Semester">
+                    <MudText Style="color:#2d3748; font-size:13px;">@context.Semester</MudText>
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudStack Row="true" Spacing="1">
+                        <MudButton Variant="Variant.Filled"
+                                   Size="Size.Small"
+                                   Style="background:#065F46; color:#ffffff; border-radius:8px; text-transform:none; font-weight:600; font-size:12px;"
+                                   StartIcon="@Icons.Material.Filled.CheckCircle"
+                                   OnClick="() => ApproveAsync(context.EnrollmentID)">
+                            Approve
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   Style="border-color:#9F1239; color:#9F1239; border-radius:8px; text-transform:none; font-weight:600; font-size:12px;"
+                                   StartIcon="@Icons.Material.Filled.Cancel"
+                                   OnClick="() => RejectAsync(context.EnrollmentID)">
+                            Reject
+                        </MudButton>
+                    </MudStack>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudStack AlignItems="AlignItems.Center" Style="padding:48px;">
+                    <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn" Style="font-size:3rem; color:#c7d2f0;" />
+                    <MudText Style="color:#6b7a99; font-weight:500;">No pending enrollments.</MudText>
+                    <MudText Typo="Typo.body2" Style="color:#a0aec0;">All enrollments have been processed.</MudText>
+                </MudStack>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+}
+
+@code {
+    List<EnrollmentModel> _enrollments = new();
+    bool _loading = true;
+    int _statusCode;
+    string _message = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    async Task LoadAsync()
+    {
+        _loading = true;
+        var r = await EnrollmentService.GetPendingEnrollmentsAsync();
+        _statusCode = r.Status;
+        _message = r.Message;
+        if (r.Status == 200) _enrollments = r.Data ?? new();
+        _loading = false;
+    }
+
+    async Task ApproveAsync(int id)
+    {
+        var r = await EnrollmentService.ApproveEnrollmentAsync(id);
+        Snackbar.Add(r.Status == 200 ? "Enrollment approved!" : $"Error {r.Status}: {r.Message}",
+            r.Status == 200 ? Severity.Success : Severity.Error);
+        if (r.Status == 200) await LoadAsync();
+    }
+
+    async Task RejectAsync(int id)
+    {
+        var r = await EnrollmentService.RejectEnrollmentAsync(id);
+        Snackbar.Add(r.Status == 200 ? "Enrollment rejected." : $"Error {r.Status}: {r.Message}",
+            r.Status == 200 ? Severity.Warning : Severity.Error);
+        if (r.Status == 200) await LoadAsync();
+    }
+}

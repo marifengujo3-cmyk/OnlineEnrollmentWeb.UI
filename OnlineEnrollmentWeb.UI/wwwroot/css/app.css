@@ -1,0 +1,268 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --mud-palette-primary: #132d6e;
+    --mud-palette-secondary: #0072CE;
+    --mud-palette-error: #cc1f2e;
+    --sidebar-width: 240px;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background-color: #f0f4ff;
+    height: 100%;
+}
+
+/* ── SIDEBAR / DRAWER ── */
+.mud-drawer {
+    width: 240px !important;
+    min-width: 240px !important;
+    max-width: 240px !important;
+    flex-shrink: 0 !important;
+    overflow: visible !important;
+}
+
+.mud-drawer-content {
+    width: 240px !important;
+    min-width: 240px !important;
+    max-width: 240px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.mud-drawer-header {
+    padding: 24px 20px !important;
+    white-space: normal !important;
+    flex-shrink: 0 !important;
+}
+
+/* Force the layout to push content right of sidebar */
+.mud-layout {
+    display: flex !important;
+    flex-direction: row !important;
+}
+
+.mud-layout-drawer-open.mud-layout-drawer-left {
+    padding-left: 240px !important;
+}
+
+.mud-main-content {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    background: #f0f4ff !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+}
+
+/* ── APPBAR ── */
+.mud-appbar {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e8edf5 !important;
+    box-shadow: none !important;
+}
+
+/* ── MAIN CONTENT ── */
+.mud-main-content {
+    padding: 0 !important;
+    background: #f0f4ff !important;
+    min-height: 100vh;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #dde4f0;
+}
+
+.page-title {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #132d6e !important;
+    margin: 0 !important;
+}
+
+.page-subtitle {
+    font-size: 13px;
+    color: #6b7a99;
+    margin-top: 2px;
+}
+
+/* ── QUICK ACTION CARDS ── */
+.qa-card {
+    border-radius: 14px !important;
+    border: 1px solid #e2e8f4 !important;
+    padding: 24px 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    text-align: center !important;
+    background: #ffffff !important;
+    min-height: 100px !important;
+}
+
+    .qa-card:hover {
+        border-color: #132d6e !important;
+        background: #eef2ff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(19,45,110,0.12) !important;
+    }
+
+.qa-icon {
+    color: #132d6e !important;
+    font-size: 2rem !important;
+}
+
+.qa-card:hover .qa-icon {
+    color: #0072CE !important;
+}
+
+.qa-label {
+    color: #132d6e !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+}
+
+/* ── WELCOME BANNER ── */
+.welcome-banner {
+    background: linear-gradient(135deg, #132d6e 0%, #1e3a8a 100%) !important;
+    border-radius: 16px !important;
+    padding: 28px 32px !important;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+    .welcome-banner::after {
+        content: '';
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.05);
+        right: -40px;
+        top: -60px;
+    }
+
+/* ── TABLE ── */
+.mud-table {
+    border-radius: 12px !important;
+    overflow: hidden;
+    border: 1px solid #e2e8f4 !important;
+}
+
+.mud-table-head .mud-table-cell {
+    background: #f5f8ff !important;
+    color: #6b7a99 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    border-bottom: 1px solid #e2e8f4 !important;
+    padding: 12px 16px !important;
+}
+
+.mud-table-body .mud-table-row:hover td {
+    background-color: #f0f4ff !important;
+}
+
+.mud-table-body .mud-table-cell {
+    font-size: 13.5px !important;
+    color: #2d3748 !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid #eef2f9 !important;
+}
+
+/* ── STATUS CHIPS ── */
+.status-pending {
+    background-color: #FFF3CD !important;
+    color: #856404 !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+}
+
+.status-approved {
+    background-color: #D1FAE5 !important;
+    color: #065F46 !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+}
+
+.status-rejected {
+    background-color: #FFE4E6 !important;
+    color: #9F1239 !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+}
+
+.status-enrolled {
+    background-color: #DBEAFE !important;
+    color: #1E40AF !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+}
+
+/* ── FORMS ── */
+.mud-input-outlined .mud-notched-outline {
+    border-radius: 10px !important;
+}
+
+.mud-input-outlined:hover .mud-notched-outline {
+    border-color: #132d6e !important;
+}
+
+.mud-input-outlined.mud-input-outlined-focused .mud-notched-outline {
+    border-color: #132d6e !important;
+}
+
+/* ── BUTTONS ── */
+.mud-button-filled-primary {
+    background: linear-gradient(135deg, #132d6e, #1e3a8a) !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0.2px !important;
+}
+
+    .mud-button-filled-primary:hover {
+        background: linear-gradient(135deg, #0d47a1, #1565c0) !important;
+        box-shadow: 0 4px 14px rgba(19,45,110,0.35) !important;
+    }
+
+/* ── LOGIN PAGE ── */
+.login-btn {
+    background: linear-gradient(135deg, #132d6e, #1565c0) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
+    height: 46px !important;
+    text-transform: none !important;
+    font-size: 15px !important;
+}
+
+/* ── MISC ── */
+.mud-chip {
+    font-weight: 600 !important;
+    font-size: 12px !important;
+}
+
+.mud-alert {
+    border-radius: 10px !important;
+}
+
+.mud-paper {
+    border-radius: 12px !important;
+}

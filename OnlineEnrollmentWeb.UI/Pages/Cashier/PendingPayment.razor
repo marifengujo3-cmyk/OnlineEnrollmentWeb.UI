@@ -1,0 +1,76 @@
+﻿@page "/cashier/pending-payments"
+@layout MainLayout
+@inject PaymentsService PaymentsService
+@inject ISnackbar Snackbar
+
+<PageTitle>Pending Payments</PageTitle>
+<MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:700;">Pending Payments</MudText>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_statusCode != 200)
+{
+    <MudAlert Severity="Severity.Error">Error @_statusCode: @_message</MudAlert>
+}
+else
+{
+    <MudTable Items="_payments" Hover="true" Striped="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Payment ID</MudTh><MudTh>Enrollment ID</MudTh>
+            <MudTh>Amount</MudTh><MudTh>Date</MudTh><MudTh>Status</MudTh><MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.PaymentID</MudTd>
+            <MudTd>@context.EnrollmentID</MudTd>
+            <MudTd>&#8369; @context.Amount.ToString("N2")</MudTd>
+            <MudTd>@context.PaymentDate.ToShortDateString()</MudTd>
+            <MudTd>
+               
+                <MudChip T="String" Size="Size.Small" Class="status-pending">
+                    @context.PaymentStatus
+                </MudChip>
+            </MudTd>
+            <MudTd>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
+                           OnClick="() => ApproveAsync(context.PaymentID)">Approve</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" Class="ml-1"
+                           OnClick="() => RejectAsync(context.PaymentID)">Reject</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent><MudText>No pending payments.</MudText></NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    List<PaymentModel> _payments = new();
+    bool _loading = true; int _statusCode; string _message = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    async Task LoadAsync()
+    {
+        _loading = true;
+        var r = await PaymentsService.GetPendingPaymentsAsync();
+        _statusCode = r.Status; _message = r.Message;
+        if (r.Status == 200) _payments = r.Data ?? new();
+        _loading = false;
+    }
+
+    async Task ApproveAsync(int id)
+    {
+        var r = await PaymentsService.ApprovePaymentAsync(id);
+        Snackbar.Add(r.Status == 200 ? "Payment approved!" : $"Error {r.Status}: {r.Message}",
+            r.Status == 200 ? Severity.Success : Severity.Error);
+        if (r.Status == 200) await LoadAsync();
+    }
+
+    async Task RejectAsync(int id)
+    {
+        var r = await PaymentsService.RejectPaymentAsync(id);
+        Snackbar.Add(r.Status == 200 ? "Payment rejected." : $"Error {r.Status}: {r.Message}",
+            r.Status == 200 ? Severity.Warning : Severity.Error);
+        if (r.Status == 200) await LoadAsync();
+    }
+}
