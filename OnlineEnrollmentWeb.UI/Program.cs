@@ -15,7 +15,7 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddBlazoredLocalStorage();
 
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://192.168.1.11:5080/") });
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://192.168.1.8:5080/") });
 
 builder.Services.AddMudServices();
 

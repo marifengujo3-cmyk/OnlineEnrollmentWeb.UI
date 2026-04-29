@@ -8,6 +8,13 @@
 
 <MudThemeProvider />
 
+<style>
+    .mud-input input {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+    }
+</style>
+
 <div style="background: linear-gradient(135deg, #132d6e 0%, #1a3572 50%, #1e3a8a 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
 
     <MudPaper Elevation="25" Style="display: flex; width: 100%; max-width: 960px; min-height: 540px; border-radius: 20px; overflow: hidden;">
@@ -60,7 +67,8 @@
                           Variant="Variant.Filled"
                           Margin="Margin.Dense"
                           FullWidth="true"
-                          Class="mb-3" />
+                          Class="mb-3"
+                          Style="color:#ffffff; font-weight:700;" />
 
             <MudTextField @bind-Value="_model.Password"
                           Label="Password"
@@ -71,7 +79,8 @@
                           AdornmentIcon="@_pwdIcon"
                           OnAdornmentClick="() => _showPwd = !_showPwd"
                           FullWidth="true"
-                          Class="mb-4" />
+                          Class="mb-4"
+                          Style="color:#ffffff; font-weight:700;" />
 
             @if (_statusCode != 0)
             {
