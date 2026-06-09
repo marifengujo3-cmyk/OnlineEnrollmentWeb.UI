@@ -1,50 +1,318 @@
 ﻿@page "/cashier/all-payments"
 @layout MainLayout
-@inject PaymentsService PaymentsService
+@inject PaymentService PaymentService
+@inject ISnackbar Snackbar
 
 <PageTitle>All Payments</PageTitle>
-<MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:700;">All Payments</MudText>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">All Payments</MudText>
+        <MudText Typo="Typo.body2" Style="color:#6b7a99;">
+            Total: @_filteredTotal payment(s) | Showing @_pagedPayments.Count of @_filteredTotal
+        </MudText>
+    </MudStack>
+    <MudChip T="string" Style="background:#dcfce7; color:#065F46;">
+        <MudIcon Icon="@Icons.Material.Filled.Receipt" Size="Size.Small" />
+        Total: @_filteredTotal
+    </MudChip>
+</MudStack>
+
+<!-- Search and Filter Bar -->
+<MudPaper Elevation="0" Style="border-radius:14px; border:1px solid #e2e8f4; padding:16px; margin-bottom:24px;">
+    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <MudTextField @bind-Value="_searchTerm"
+                      Placeholder="Search by Student #, Name, or Reference #..."
+                      Variant="Variant.Outlined"
+                      Size="Size.Small"
+                      Style="min-width:200px; flex:2;"
+                      Immediate="true"
+                      OnKeyUp="@(() => ApplyFilters())" />
+        <select @bind="_selectedStatus" @bind:after="ApplyFilters" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 130px;">
+            <option value="all">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+        </select>
+
+        <select @bind="_selectedCourse" @bind:after="ApplyFilters" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 180px;">
+            <option value="">All Courses</option>
+            <option value="BS Information Technology">BS Information Technology</option>
+            <option value="BS Computer Science">BS Computer Science</option>
+            <option value="BS Accountancy">BS Accountancy</option>
+            <option value="BS Business Administration">BS Business Administration</option>
+            <option value="BS Hospitality Management">BS Hospitality Management</option>
+        </select>
+
+        <select @bind="_selectedYearLevel" @bind:after="ApplyFilters" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 130px;">
+            <option value="">All Years</option>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+        </select>
+
+        <select @bind="_selectedSemester" @bind:after="ApplyFilters" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 140px;">
+            <option value="">All Semesters</option>
+            <option value="1st Semester">1st Semester</option>
+            <option value="2nd Semester">2nd Semester</option>
+        </select>
+
+        <select @bind="_selectedSchoolYear" @bind:after="ApplyFilters" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 140px;">
+            <option value="">All School Years</option>
+            <option value="2024-2025">2024-2025</option>
+            <option value="2025-2026">2025-2026</option>
+            <option value="2026-2027">2026-2027</option>
+        </select>
+
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Clear"
+                   OnClick="@ClearFilters">
+            Clear
+        </MudButton>
+    </div>
+</MudPaper>
 
 @if (_loading)
 {
     <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
 }
-else if (_statusCode != 200)
+else if (_pagedPayments.Count == 0)
 {
-    <MudAlert Severity="Severity.Error">Error @_statusCode: @_message</MudAlert>
+    <MudPaper Elevation="0" Style="border-radius:14px; border:1px solid #e2e8f4; padding:48px; text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.Receipt" Style="font-size:3rem; color:#c7d2f0;" />
+        <MudText Style="color:#6b7a99;">No payments found</MudText>
+    </MudPaper>
 }
 else
 {
-    <MudTable Items="_payments" Hover="true" Striped="true" Dense="true">
-        <HeaderContent>
-            <MudTh>Payment ID</MudTh><MudTh>Enrollment ID</MudTh>
-            <MudTh>Amount</MudTh><MudTh>Date</MudTh><MudTh>Status</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd>@context.PaymentID</MudTd>
-            <MudTd>@context.EnrollmentID</MudTd>
-            <MudTd>&#8369; @context.Amount.ToString("N2")</MudTd>
-            <MudTd>@context.PaymentDate.ToShortDateString()</MudTd>
-            <MudTd>
-                <MudChip T="String"Size="Size.Small"
-                         Class="@($"status-{context.PaymentStatus.ToLower()}")">
-                    @context.PaymentStatus
-                </MudChip>
-            </MudTd>
-        </RowTemplate>
-        <NoRecordsContent><MudText>No payments found.</MudText></NoRecordsContent>
-    </MudTable>
+    <MudPaper Elevation="2" Style="border-radius:14px; overflow-x:auto;">
+        <MudTable Items="_pagedPayments" Hover="true" Elevation="0" Style="min-width:1300px;">
+            <HeaderContent>
+                <MudTh>Student ID</MudTh>
+                <MudTh>Student Number</MudTh>
+                <MudTh>Full Name</MudTh>
+                <MudTh>Course</MudTh>
+                <MudTh>Year Level</MudTh>
+                <MudTh>Semester</MudTh>
+                <MudTh>Amount</MudTh>
+                <MudTh>Method</MudTh>
+                <MudTh>Reference #</MudTh>
+                <MudTh>Date</MudTh>
+                <MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.StudentID</MudTd>
+                <MudTd>@context.StudentNumber</MudTd>
+                <MudTd>@context.FullName</MudTd>
+                <MudTd>@context.Course</MudTd>
+                <MudTd>@context.YearLevel</MudTd>
+                <MudTd>@context.Semester</MudTd>
+                <MudTd style="font-weight:600;">₱@context.Amount.ToString("N2")</MudTd>
+                <MudTd>
+                    <MudChip T="string" Color="@(context.PaymentMethod == "GCash" ? Color.Info : Color.Warning)" Size="Size.Small">
+                        @context.PaymentMethod
+                    </MudChip>
+                </MudTd>
+                <MudTd>
+                    <div style="font-family:monospace; font-size:0.85rem;">@context.ReferenceNumber</div>
+                </MudTd>
+                <MudTd>@context.PaymentDate.ToString("MMM dd, yyyy")</MudTd>
+                <MudTd>
+                    @if (context.PaymentStatus == "Approved")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#dcfce7; color:#065F46;">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
+                            Approved
+                        </MudChip>
+                    }
+                    else if (context.PaymentStatus == "Pending")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fff3cd; color:#856404;">
+                            <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Size="Size.Small" />
+                            Pending
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fee2e2; color:#991b1b;">
+                            <MudIcon Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" />
+                            @context.PaymentStatus
+                        </MudChip>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+
+        <!-- Pagination Controls -->
+        <div style="display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; margin-bottom: 16px; padding: 8px;">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ChangePage(_currentPage - 1))" Disabled="@(_currentPage <= 1)">
+                ◀ Previous
+            </MudButton>
+
+            <span style="font-size: 14px; color: #6b7a99;">
+                Page @_currentPage of @_totalPages
+            </span>
+
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ChangePage(_currentPage + 1))" Disabled="@(_currentPage >= _totalPages)">
+                Next ▶
+            </MudButton>
+
+            <div style="margin-left: 16px;">
+                <select @bind="PageSize" style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 8px;">
+                    <option value="10">10 per page</option>
+                    <option value="20">20 per page</option>
+                    <option value="50">50 per page</option>
+                    <option value="100">100 per page</option>
+                </select>
+            </div>
+        </div>
+    </MudPaper>
 }
 
 @code {
-    List<PaymentModel> _payments = new();
-    bool _loading = true; int _statusCode; string _message = string.Empty;
+    private List<PaymentModel> _allPayments = new();
+    private List<PaymentModel> _filteredPayments = new();
+    private List<PaymentModel> _pagedPayments = new();
+    private bool _loading = true;
+
+    // Filters
+    private string _searchTerm = "";
+    private string _selectedStatus = "all";
+    private string _selectedCourse = "";
+    private string _selectedYearLevel = "";
+    private string _selectedSemester = "";
+    private string _selectedSchoolYear = "";
+
+    // Counts
+    private int _filteredTotal = 0;
+
+    // Pagination
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private int _totalPages = 1;
+
+    private int PageSize
+    {
+        get => _pageSize;
+        set
+        {
+            if (_pageSize != value)
+            {
+                _pageSize = value;
+                ChangePage(1);
+            }
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        var r = await PaymentsService.GetAllPaymentsAsync();
-        _statusCode = r.Status; _message = r.Message;
-        if (r.Status == 200) _payments = r.Data ?? new();
+        await LoadPayments();
+    }
+
+    private async Task LoadPayments()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var response = await PaymentService.GetAllPaymentsAsync(_searchTerm);
+
+        if (response != null && response.Status == 200 && response.Data != null)
+        {
+            _allPayments = response.Data;
+        }
+        else
+        {
+            _allPayments = new List<PaymentModel>();
+            Snackbar.Add(response?.Message ?? "Error loading payments", Severity.Error);
+        }
+
+        ApplyFilters();
         _loading = false;
+        StateHasChanged();
+    }
+
+    private void ApplyFilters()
+    {
+        var query = _allPayments.AsEnumerable();
+
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            query = query.Where(p =>
+                (p.FullName?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.StudentNumber?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.ReferenceNumber?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        // Status filter
+        if (_selectedStatus != "all")
+        {
+            query = query.Where(p => p.PaymentStatus.Equals(_selectedStatus, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Course filter
+        if (!string.IsNullOrWhiteSpace(_selectedCourse))
+        {
+            query = query.Where(p => p.Course == _selectedCourse);
+        }
+
+        // Year Level filter
+        if (!string.IsNullOrWhiteSpace(_selectedYearLevel))
+        {
+            query = query.Where(p => p.YearLevel == _selectedYearLevel);
+        }
+
+        // Semester filter
+        if (!string.IsNullOrWhiteSpace(_selectedSemester))
+        {
+            query = query.Where(p => p.Semester == _selectedSemester);
+        }
+
+        // School Year filter
+        if (!string.IsNullOrWhiteSpace(_selectedSchoolYear))
+        {
+            query = query.Where(p => p.SchoolYear == _selectedSchoolYear);
+        }
+
+        _filteredPayments = query.OrderByDescending(p => p.PaymentDate).ToList();
+        _filteredTotal = _filteredPayments.Count;
+
+        // Calculate total pages
+        _totalPages = (int)Math.Ceiling((double)_filteredTotal / _pageSize);
+
+        // Ensure current page is valid
+        if (_currentPage > _totalPages && _totalPages > 0)
+            _currentPage = _totalPages;
+        if (_currentPage < 1)
+            _currentPage = 1;
+
+        // Apply pagination
+        _pagedPayments = _filteredPayments
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize)
+            .ToList();
+
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        _searchTerm = "";
+        _selectedStatus = "all";
+        _selectedCourse = "";
+        _selectedYearLevel = "";
+        _selectedSemester = "";
+        _selectedSchoolYear = "";
+        _currentPage = 1;
+        ApplyFilters();
+        Snackbar.Add("Filters cleared", Severity.Info);
+    }
+
+    private void ChangePage(int newPage)
+    {
+        if (newPage < 1 || newPage > _totalPages) return;
+        _currentPage = newPage;
+        ApplyFilters();
     }
 }

@@ -1,0 +1,287 @@
+﻿@page "/registrar/documents"
+@layout MainLayout
+@inject DocumentsService DocumentsService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>Student Documents</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">Student Documents</MudText>
+        <MudText Typo="Typo.body2" Style="color:#6b7a99;">
+            Total: @_filteredTotal student(s) | Showing @_pagedStudents.Count of @_filteredTotal
+        </MudText>
+    </MudStack>
+    <MudChip T="string" Style="background:#dcfce7; color:#065F46;">
+        <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />
+        Total Students: @_filteredTotal
+    </MudChip>
+</MudStack>
+
+<!-- Search and Filter Bar -->
+<MudPaper Elevation="0" Style="border-radius:14px; border:1px solid #e2e8f4; padding:16px; margin-bottom:24px;">
+    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <MudTextField @bind-Value="_searchTerm"
+                      Placeholder="Search by Student # or Name..."
+                      Variant="Variant.Outlined"
+                      Size="Size.Small"
+                      Style="min-width:200px; flex:2;"
+                      Immediate="true"
+                      OnKeyUp="@(() => ApplyFilters())">
+            <Adornment>
+                <MudIcon Icon="@Icons.Material.Filled.Search" />
+            </Adornment>
+        </MudTextField>
+
+        <select @bind="_selectedStatus" @bind:after="ApplyFilters" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 130px;">
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+        </select>
+
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Clear"
+                   OnClick="@ClearFilters">
+            Clear
+        </MudButton>
+    </div>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_pagedStudents.Count == 0)
+{
+    <MudPaper Elevation="0" Style="border-radius:14px; border:1px solid #e2e8f4; padding:48px; text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.Description" Style="font-size:3rem; color:#c7d2f0;" />
+        <MudText Style="color:#6b7a99;">No students with documents found</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudPaper Elevation="2" Style="border-radius:14px; overflow-x:auto;">
+        <MudTable Items="_pagedStudents" Hover="true" Elevation="0" Style="min-width:1100px;">
+            <HeaderContent>
+                <MudTh>Student ID</MudTh>
+                <MudTh>Student #</MudTh>
+                <MudTh>Student Name</MudTh>
+                <MudTh>Total Documents</MudTh>
+                <MudTh>Approved</MudTh>
+                <MudTh>Pending</MudTh>
+                <MudTh>Rejected</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.StudentID</MudTd>
+                <MudTd>@context.StudentNumber</MudTd>
+                <MudTd>@context.FullName</MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Style="background:#dbeafe; color:#1e40af; font-weight:600;">
+                        <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />
+                        @context.TotalDocuments
+                    </MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Style="background:#dcfce7; color:#065F46;">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
+                        @context.ApprovedCount
+                    </MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Style="background:#fff3cd; color:#856404;">
+                        <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Size="Size.Small" />
+                        @context.PendingCount
+                    </MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Style="background:#fee2e2; color:#991b1b;">
+                        <MudIcon Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" />
+                        @context.RejectedCount
+                    </MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Text"
+                               Size="Size.Small"
+                               Style="background:#eff6ff; color:#3b82f6; font-weight:600; border-radius:8px; padding:6px 12px;"
+                               OnClick="@(() => NavigationManager.NavigateTo($"/registrar/student-documents/{context.StudentID}"))">
+                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" />
+                        View Documents
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+        
+        <!-- Pagination Controls -->
+        <div style="display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; margin-bottom: 16px; padding: 8px;">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ChangePage(_currentPage - 1))" Disabled="@(_currentPage <= 1)">
+                ◀ Previous
+            </MudButton>
+            
+            <span style="font-size: 14px; color: #6b7a99;">
+                Page @_currentPage of @_totalPages
+            </span>
+            
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ChangePage(_currentPage + 1))" Disabled="@(_currentPage >= _totalPages)">
+                Next ▶
+            </MudButton>
+            
+            <div style="margin-left: 16px;">
+                <select @bind="PageSize" style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 8px;">
+                    <option value="10">10 per page</option>
+                    <option value="20">20 per page</option>
+                    <option value="50">50 per page</option>
+                    <option value="100">100 per page</option>
+                </select>
+            </div>
+        </div>
+    </MudPaper>
+}
+
+@code {
+    private List<DocumentModel> _allDocuments = new();
+    private List<StudentDocumentSummary> _filteredStudents = new();
+    private List<StudentDocumentSummary> _pagedStudents = new();
+    private bool _loading = true;
+    
+    // Filters
+    private string _searchTerm = "";
+    private string _selectedStatus = "all";
+    
+    // Counts
+    private int _filteredTotal = 0;
+    
+    // Pagination
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private int _totalPages = 1;
+
+    private int PageSize
+    {
+        get => _pageSize;
+        set
+        {
+            if (_pageSize != value)
+            {
+                _pageSize = value;
+                ChangePage(1);
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDocuments();
+    }
+
+    private async Task LoadDocuments()
+    {
+        _loading = true;
+        StateHasChanged();
+        
+        ServiceResponse<List<DocumentModel>> response = null;
+        
+        if (_selectedStatus == "pending")
+            response = await DocumentsService.GetPendingDocumentsAsync(_searchTerm);
+        else if (_selectedStatus == "approved")
+            response = await DocumentsService.GetApprovedDocumentsAsync(_searchTerm);
+        else
+            response = await DocumentsService.GetAllDocumentsWithStudentsAsync(_searchTerm);
+        
+        if (response != null && response.Status == 200 && response.Data != null)
+        {
+            _allDocuments = response.Data;
+        }
+        else
+        {
+            _allDocuments = new List<DocumentModel>();
+            if (response?.Status != 200)
+                Snackbar.Add(response?.Message ?? "Error loading documents", Severity.Error);
+        }
+        
+        ApplyFilters();
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private void ApplyFilters()
+    {
+        var query = _allDocuments.AsEnumerable();
+        
+        // Additional client-side search
+        if (!string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            query = query.Where(d =>
+                (d.FullName?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (d.StudentNumber?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+        
+        // Group by student to get document counts with status breakdown
+        var students = query
+            .GroupBy(d => d.StudentID)
+            .Select(g => new StudentDocumentSummary
+            {
+                StudentID = g.Key,
+                StudentNumber = g.First().StudentNumber,
+                FirstName = g.First().FirstName,
+                LastName = g.First().LastName,
+                TotalDocuments = g.Count(),
+                ApprovedCount = g.Count(d => d.Status == "Approved"),
+                PendingCount = g.Count(d => d.Status == "Pending"),
+                RejectedCount = g.Count(d => d.Status == "Rejected")
+            })
+            .OrderBy(s => s.FullName)
+            .ToList();
+        
+        _filteredStudents = students;
+        _filteredTotal = _filteredStudents.Count;
+        
+        // Calculate total pages
+        _totalPages = (int)Math.Ceiling((double)_filteredTotal / _pageSize);
+        
+        // Ensure current page is valid
+        if (_currentPage > _totalPages && _totalPages > 0)
+            _currentPage = _totalPages;
+        if (_currentPage < 1)
+            _currentPage = 1;
+        
+        // Apply pagination
+        _pagedStudents = _filteredStudents
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize)
+            .ToList();
+            
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        _searchTerm = "";
+        _selectedStatus = "all";
+        _currentPage = 1;
+        LoadDocuments();
+        Snackbar.Add("Filters cleared", Severity.Info);
+    }
+
+    private void ChangePage(int newPage)
+    {
+        if (newPage < 1 || newPage > _totalPages) return;
+        _currentPage = newPage;
+        ApplyFilters();
+    }
+
+    // Helper class for student summary with document counts
+    public class StudentDocumentSummary
+    {
+        public int StudentID { get; set; }
+        public string StudentNumber { get; set; } = "";
+        public string FirstName { get; set; } = "";
+        public string LastName { get; set; } = "";
+        public string FullName => $"{FirstName} {LastName}";
+        public int TotalDocuments { get; set; }
+        public int ApprovedCount { get; set; }
+        public int PendingCount { get; set; }
+        public int RejectedCount { get; set; }
+    }
+}

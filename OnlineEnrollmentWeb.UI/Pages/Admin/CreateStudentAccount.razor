@@ -3,13 +3,13 @@
 @inject AuthService AuthService
 @inject ISnackbar Snackbar
 @inject NavigationManager nav
+@inject IJSRuntime JS
 
 <PageTitle>Create Student Account</PageTitle>
 
-<MudGrid Justify="Justify.Center">
-    <MudItem xs="12" sm="10" md="7" lg="5">
-
-        <!-- Header Card -->
+<MudGrid>
+    <!-- Left Side - Create Account Form -->
+    <MudItem xs="12" md="5">
         <MudPaper Elevation="0" Style="background:linear-gradient(135deg,#132d6e 0%,#1e3a8a 100%); border-radius:20px 20px 0 0; padding:32px 36px 28px;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
                 <MudAvatar Style="background:rgba(255,255,255,0.15); width:52px; height:52px;">
@@ -17,69 +17,80 @@
                 </MudAvatar>
                 <MudStack Spacing="0">
                     <MudText Typo="Typo.h6" Style="color:#ffffff; font-weight:700; line-height:1.2;">Create Student Account</MudText>
-                    <MudText Typo="Typo.body2" Style="color:rgba(255,255,255,0.6); font-size:13px;">Fill in the details to register a new student</MudText>
+                    <MudText Typo="Typo.body2" Style="color:rgba(255,255,255,0.6); font-size:13px;">Enter Student ID to auto-fill details</MudText>
                 </MudStack>
             </MudStack>
         </MudPaper>
 
-        <!-- Form Card -->
         <MudPaper Elevation="3" Style="border-radius:0 0 20px 20px; padding:36px; background:#ffffff;">
-
             <MudStack Spacing="4">
-
-                <!-- Student ID -->
+                <!-- Student ID Input -->
                 <MudStack Spacing="1">
                     <MudText Typo="Typo.body2" Style="color:#132d6e; font-weight:600; font-size:13px;">Student ID</MudText>
-                    <MudTextField @bind-Value="_req.StudentID"
-                                  Placeholder="e.g. 2024-00001"
-                                  Variant="Variant.Outlined"
-                                  Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.Filled.Badge"
-                                  AdornmentColor="Color.Primary"
-                                  Style="border-radius:10px;" />
+                    <MudNumericField @bind-Value="_studentId"
+                                     Placeholder="Enter Student ID"
+                                     Variant="Variant.Outlined"
+                                     Adornment="Adornment.Start"
+                                     AdornmentIcon="@Icons.Material.Filled.Badge"
+                                     AdornmentColor="Color.Primary"
+                                     Immediate="true"
+                                     OnKeyUp="@(() => LoadStudentInfo())"
+                                     Style="border-radius:10px;" />
                 </MudStack>
 
-                <!-- Username -->
+                <!-- Student Number (Auto-filled) -->
                 <MudStack Spacing="1">
-                    <MudText Typo="Typo.body2" Style="color:#132d6e; font-weight:600; font-size:13px;">Username (Student Number)</MudText>
-                    <MudTextField @bind-Value="_req.Username"
-                                  Placeholder="e.g. 2024-00001"
+                    <MudText Typo="Typo.body2" Style="color:#132d6e; font-weight:600; font-size:13px;">Student Number</MudText>
+                    <MudTextField @bind-Value="_studentNumber"
                                   Variant="Variant.Outlined"
-                                  Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.Filled.Person"
-                                  AdornmentColor="Color.Primary"
+                                  ReadOnly="true"
+                                  Disabled="true"
                                   Style="border-radius:10px;" />
                 </MudStack>
 
-                <!-- Password -->
+                <!-- Student Name (Auto-filled) -->
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.body2" Style="color:#132d6e; font-weight:600; font-size:13px;">Student Name</MudText>
+                    <MudTextField @bind-Value="_studentName"
+                                  Variant="Variant.Outlined"
+                                  ReadOnly="true"
+                                  Disabled="true"
+                                  Style="border-radius:10px;" />
+                </MudStack>
+
+                <!-- Username (Auto-filled from Student Number) -->
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.body2" Style="color:#132d6e; font-weight:600; font-size:13px;">Username</MudText>
+                    <MudTextField @bind-Value="_username"
+                                  Variant="Variant.Outlined"
+                                  ReadOnly="true"
+                                  Disabled="true"
+                                  HelperText="Auto-filled from Student Number"
+                                  Style="border-radius:10px;" />
+                </MudStack>
+
+                <!-- Password (Auto-generated, can be edited) -->
                 <MudStack Spacing="1">
                     <MudText Typo="Typo.body2" Style="color:#132d6e; font-weight:600; font-size:13px;">Password</MudText>
-                    <MudTextField @bind-Value="_req.Password"
-                                  Placeholder="Enter a strong password"
+                    <MudTextField @bind-Value="_password"
                                   Variant="Variant.Outlined"
                                   InputType="@_passwordInput"
                                   Adornment="Adornment.End"
                                   AdornmentIcon="@_passwordIcon"
                                   OnAdornmentClick="TogglePassword"
-                                  AdornmentColor="Color.Default"
+                                  HelperText="Auto-generated, can be changed"
                                   Style="border-radius:10px;" />
                 </MudStack>
 
-                <!-- Alert -->
                 @if (_statusCode != 0)
                 {
-                    <MudAlert Severity="@_severity"
-                              Style="border-radius:10px;"
-                              ShowCloseIcon="true"
-                              CloseIconClicked="() => _statusCode = 0">
+                    <MudAlert Severity="@_severity" Style="border-radius:10px;" ShowCloseIcon="true" CloseIconClicked="() => _statusCode = 0">
                         @_message
                     </MudAlert>
                 }
 
-                <!-- Divider -->
                 <MudDivider Style="border-color:#e8edf5;" />
 
-                <!-- Actions -->
                 <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
                     <MudButton Variant="Variant.Outlined"
                                Style="border-radius:10px; border-color:#e2e8f4; color:#6b7a99; text-transform:none; font-weight:600; padding:8px 24px;"
@@ -88,49 +99,340 @@
                         Clear
                     </MudButton>
                     <MudButton Variant="Variant.Filled"
-                               Style="border-radius:10px; background:linear-gradient(135deg,#132d6e,#1e3a8a); color:#ffffff; text-transform:none; font-weight:600; padding:8px 32px; box-shadow:0 4px 14px rgba(19,45,110,0.3);"
-                               OnClick="HandleCreate"
-                               Disabled="_loading">
+                               Style="border-radius:10px; background:linear-gradient(135deg,#132d6e,#1e3a8a); color:#ffffff; text-transform:none; font-weight:600; padding:8px 32px;"
+                               OnClick="CreateAccount"
+                               Disabled="_loading || _studentId <= 0 || _accountExists">
                         @if (_loading)
                         {
-                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" Style="color:#ffffff;" />
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
                             <span>Creating...</span>
                         }
                         else
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Class="mr-2" Style="font-size:1rem;" />
+                            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Class="mr-2" />
                             <span>Create Account</span>
                         }
                     </MudButton>
+
                 </MudStack>
 
+                @if (_accountExists)
+                {
+                    <MudAlert Severity="Severity.Warning" Style="border-radius:10px; margin-top:10px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+                        Account already exists for this student!
+                    </MudAlert>
+                }
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Right Side - Existing Accounts Table -->
+    <MudItem xs="12" md="7">
+        <MudPaper Elevation="0" Style="background:linear-gradient(135deg,#1e3a8a 0%,#132d6e 100%); border-radius:20px 20px 0 0; padding:32px 36px 28px;">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                    <MudAvatar Style="background:rgba(255,255,255,0.15); width:52px; height:52px;">
+                        <MudIcon Icon="@Icons.Material.Filled.List" Style="color:#ffffff; font-size:1.6rem;" />
+                    </MudAvatar>
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6" Style="color:#ffffff; font-weight:700; line-height:1.2;">Created Accounts</MudText>
+                        <MudText Typo="Typo.body2" Style="color:rgba(255,255,255,0.6); font-size:13px;">Total: @_allAccounts.Count account(s) | Showing @_pagedAccounts.Count of @_filteredTotal</MudText>
+                    </MudStack>
+                </MudStack>
+                <MudTextField @bind-Value="_searchTerm"
+                              Placeholder="Search by Student ID, Username, or Name..."
+                              Variant="Variant.Outlined"
+                              Size="Size.Small"
+                              Style="min-width:200px; background:rgba(255,255,255,0.1); border-radius:10px;"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Immediate="true"
+                              OnKeyUp="@(() => LoadAccounts())" />
             </MudStack>
         </MudPaper>
 
-        <!-- Info note -->
-        <MudPaper Elevation="0" Style="background:#eef2ff; border-radius:10px; padding:14px 18px; margin-top:16px; border:1px solid #c7d2f0;">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudIcon Icon="@Icons.Material.Filled.Info" Style="color:#132d6e; font-size:1.1rem;" />
-                <MudText Typo="Typo.body2" Style="color:#132d6e; font-size:12.5px;">
-                    The student will use their <strong>username</strong> and <strong>password</strong> to log in to the portal.
-                </MudText>
-            </MudStack>
-        </MudPaper>
+        <MudPaper Elevation="3" Style="border-radius:0 0 20px 20px; padding:0; background:#ffffff; overflow:hidden;">
+            @if (_accountsLoading)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" Style="margin:20px;" />
+            }
+            else if (_pagedAccounts.Count == 0)
+            {
+                <MudStack AlignItems="AlignItems.Center" Style="padding:48px;">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Style="font-size:3rem; color:#c7d2f0;" />
+                    <MudText Style="color:#6b7a99;">No accounts created yet</MudText>
+                </MudStack>
+            }
+            else
+            {
+                <MudTable Items="_pagedAccounts" Hover="true" Elevation="0" Style="border-radius:0;">
+                    <HeaderContent>
+                        <MudTh>Student ID</MudTh>
+                        <MudTh>Student Number / Username</MudTh>
+                        <MudTh>Student Name</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.StudentID</MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">
+                                @context.Username
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>@context.FullName</MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Style="background:#2e7d32; color:white;">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Style="margin-right:4px;" />
+                                Active
+                            </MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
 
+                <!-- Pagination Controls -->
+                <div style="display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; margin-bottom: 16px;">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ChangePage(_currentPage - 1))" Disabled="@(_currentPage <= 1)">
+                        ◀ Previous
+                    </MudButton>
+
+                    <span style="font-size: 14px; color: #6b7a99;">
+                        Page @_currentPage of @_totalPages
+                    </span>
+
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ChangePage(_currentPage + 1))" Disabled="@(_currentPage >= _totalPages)">
+                        Next ▶
+                    </MudButton>
+
+                    <div style="margin-left: 16px;">
+                        <select @bind="PageSize" style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 8px;">
+                            <option value="5">5 per page</option>
+                            <option value="10">10 per page</option>
+                            <option value="20">20 per page</option>
+                            <option value="50">50 per page</option>
+                        </select>
+                    </div>
+                </div>
+            }
+        </MudPaper>
     </MudItem>
 </MudGrid>
 
 @code {
-    CreateStudentRequest _req = new();
-    bool _loading;
-    int _statusCode;
-    string _message = string.Empty;
-    Severity _severity = Severity.Success;
+    private int _studentId;
+    private string _studentNumber = "";
+    private string _studentName = "";
+    private string _username = "";
+    private string _password = "";
+    private bool _loading = false;
+    private bool _accountExists = false;
+    private bool _accountsLoading = false;
+    private int _statusCode;
+    private string _message = string.Empty;
+    private Severity _severity = Severity.Success;
+    private string _searchTerm = "";
+
+    // Account list with pagination
+    private List<StudentAccountListModel> _allAccounts = new();
+    private List<StudentAccountListModel> _filteredAccounts = new();
+    private List<StudentAccountListModel> _pagedAccounts = new();
+    private int _filteredTotal = 0;
+
+    // Pagination
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private int _totalPages = 1;
 
     InputType _passwordInput = InputType.Password;
     string _passwordIcon = Icons.Material.Filled.VisibilityOff;
 
-    void TogglePassword()
+    private int PageSize
+    {
+        get => _pageSize;
+        set
+        {
+            if (_pageSize != value)
+            {
+                _pageSize = value;
+                ChangePage(1);
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccounts();
+        GeneratePassword();
+    }
+
+    private void GeneratePassword()
+    {
+        var random = new Random();
+        var randomNumbers = random.Next(1000, 9999);
+        _password = $"Student@{randomNumbers}";
+    }
+
+    private async Task LoadStudentInfo()
+    {
+        if (_studentId <= 0)
+        {
+            _studentNumber = "";
+            _studentName = "";
+            _username = "";
+            _accountExists = false;
+            return;
+        }
+
+        var result = await AuthService.GetStudentByIdAsync(_studentId);
+        if (result.Status == 200 && result.Data != null)
+        {
+            _studentNumber = result.Data.StudentNumber;
+            _studentName = result.Data.FullName;
+            _username = result.Data.StudentNumber;
+
+            var existsResult = await AuthService.AccountExistsAsync(_studentId);
+            _accountExists = existsResult.Status == 200 && existsResult.Data == true;
+
+            if (_accountExists)
+            {
+                _password = "••••••••";
+            }
+            else
+            {
+                GeneratePassword();
+            }
+        }
+        else
+        {
+            _studentNumber = "";
+            _studentName = "";
+            _username = "";
+            _accountExists = false;
+            GeneratePassword();
+        }
+        StateHasChanged();
+    }
+
+    private async Task LoadAccounts()
+    {
+        _accountsLoading = true;
+        StateHasChanged();
+
+        var result = await AuthService.GetAllStudentAccountsAsync(_searchTerm);
+        if (result.Status == 200 && result.Data != null)
+        {
+            _allAccounts = result.Data;
+            ApplyFilters();
+        }
+        else
+        {
+            _allAccounts = new List<StudentAccountListModel>();
+            _filteredAccounts = new List<StudentAccountListModel>();
+            _pagedAccounts = new List<StudentAccountListModel>();
+        }
+
+        _accountsLoading = false;
+        StateHasChanged();
+    }
+
+    private void ApplyFilters()
+    {
+        var query = _allAccounts.AsEnumerable();
+
+        // Apply search filter
+        if (!string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            query = query.Where(a =>
+                a.StudentID.ToString().Contains(_searchTerm) ||
+                (a.Username?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (a.FullName?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        _filteredAccounts = query.OrderByDescending(a => a.StudentID).ToList();
+        _filteredTotal = _filteredAccounts.Count;
+
+        // Calculate total pages
+        _totalPages = (int)Math.Ceiling((double)_filteredTotal / _pageSize);
+
+        // Ensure current page is valid
+        if (_currentPage > _totalPages && _totalPages > 0)
+            _currentPage = _totalPages;
+        if (_currentPage < 1)
+            _currentPage = 1;
+
+        // Apply pagination
+        _pagedAccounts = _filteredAccounts
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize)
+            .ToList();
+
+        StateHasChanged();
+    }
+
+    private void ChangePage(int newPage)
+    {
+        if (newPage < 1 || newPage > _totalPages) return;
+        _currentPage = newPage;
+        ApplyFilters();
+    }
+
+    private async Task CreateAccount()
+    {
+        if (_studentId <= 0)
+        {
+            Snackbar.Add("Please enter a valid Student ID", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(_username))
+        {
+            Snackbar.Add("Username cannot be empty", Severity.Warning);
+            return;
+        }
+
+        _loading = true;
+        _statusCode = 0;
+        StateHasChanged();
+
+        var result = await AuthService.CreateAccountAsync(_studentId, _username, _password);
+
+        _statusCode = result.Status;
+        _message = result.Message;
+        _severity = result.Status == 200 ? Severity.Success : Severity.Error;
+
+        if (result.Status == 200)
+        {
+            Snackbar.Add("Account created successfully!", Severity.Success);
+            ResetForm();
+            await LoadAccounts();
+        }
+        else
+        {
+            Snackbar.Add(result.Message ?? "Failed to create account", Severity.Error);
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        Snackbar.Add("Copied to clipboard!", Severity.Info);
+    }
+
+    private void ResetForm()
+    {
+        _studentId = 0;
+        _studentNumber = "";
+        _studentName = "";
+        _username = "";
+        GeneratePassword();
+        _statusCode = 0;
+        _message = string.Empty;
+    }
+
+    private void TogglePassword()
     {
         if (_passwordInput == InputType.Password)
         {
@@ -142,26 +444,5 @@
             _passwordInput = InputType.Password;
             _passwordIcon = Icons.Material.Filled.VisibilityOff;
         }
-    }
-
-    void ResetForm()
-    {
-        _req = new();
-        _statusCode = 0;
-        _message = string.Empty;
-    }
-
-    async Task HandleCreate()
-    {
-        _loading = true;
-        _statusCode = 0;
-        var r = await AuthService.CreateStudentAccountAsync(_req);
-        _statusCode = r.Status;
-        _message = r.Message;
-        _severity = r.Status == 200 ? Severity.Success
-                  : r.Status == 400 ? Severity.Warning
-                  : Severity.Error;
-        if (r.Status == 200) _req = new();
-        _loading = false;
     }
 }

@@ -1,6 +1,10 @@
 ﻿@page "/cashier"
 @layout MainLayout
-@inject PaymentsService PaymentsService
+@inject StudentsService StudentsService
+@inject EnrollmentService EnrollmentService
+@inject DocumentsService DocumentsService
+@inject PaymentService PaymentService
+@inject NavigationManager nav
 
 <PageTitle>Cashier Dashboard</PageTitle>
 
@@ -14,10 +18,10 @@
 
 @if (_loading)
 {
-    <MudGrid Spacing="3">
-        @for (int i = 0; i < 3; i++)
+    <MudGrid Spacing="3" Class="mb-6">
+        @for (int i = 0; i < 4; i++)
         {
-            <MudItem xs="12" sm="4">
+            <MudItem xs="12" sm="6" md="3">
                 <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Style="border-radius:14px;" />
             </MudItem>
         }
@@ -25,32 +29,183 @@
 }
 else
 {
-    <MudGrid Spacing="3">
-        <MudItem xs="12" sm="4">
-            <MudPaper Elevation="3" Style="border-radius:14px; background:linear-gradient(135deg,#c62828,#e53935); padding:24px; min-height:120px; position:relative; overflow:hidden;">
-                <MudStack Spacing="1">
-                    <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.8px; font-size:11px; font-weight:600;">Pending Payments</MudText>
-                    <MudText Typo="Typo.h3" Style="color:#ffffff; font-weight:800; line-height:1;">@_pending</MudText>
-                </MudStack>
-                <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Style="position:absolute; right:16px; bottom:16px; font-size:3.5rem; color:rgba(255,255,255,0.12);" />
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="4">
-            <MudPaper Elevation="3" Style="border-radius:14px; background:linear-gradient(135deg,#1b5e20,#2e7d32); padding:24px; min-height:120px; position:relative; overflow:hidden;">
-                <MudStack Spacing="1">
-                    <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.8px; font-size:11px; font-weight:600;">Approved Payments</MudText>
-                    <MudText Typo="Typo.h3" Style="color:#ffffff; font-weight:800; line-height:1;">@_approved</MudText>
-                </MudStack>
-                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="position:absolute; right:16px; bottom:16px; font-size:3.5rem; color:rgba(255,255,255,0.12);" />
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="4">
+    <!-- Row 1: Overview Statistics -->
+    <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700; margin-bottom:16px;">Overview</MudText>
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
             <MudPaper Elevation="3" Style="border-radius:14px; background:linear-gradient(135deg,#1565c0,#1e88e5); padding:24px; min-height:120px; position:relative; overflow:hidden;">
                 <MudStack Spacing="1">
-                    <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.8px; font-size:11px; font-weight:600;">Total Payments</MudText>
-                    <MudText Typo="Typo.h3" Style="color:#ffffff; font-weight:800; line-height:1;">@_total</MudText>
+                    <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.8px; font-size:11px; font-weight:600;">Total Students</MudText>
+                    <MudText Typo="Typo.h3" Style="color:#ffffff; font-weight:800; line-height:1;">@_totalStudents</MudText>
+                    <MudText Typo="Typo.body2" Style="color:rgba(255,255,255,0.6); font-size:12px;">
+                        +@_newThisMonth new this month
+                    </MudText>
                 </MudStack>
-                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Style="position:absolute; right:16px; bottom:16px; font-size:3.5rem; color:rgba(255,255,255,0.12);" />
+                <MudIcon Icon="@Icons.Material.Filled.School" Style="position:absolute; right:16px; bottom:16px; font-size:3.5rem; color:rgba(255,255,255,0.12);" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Style="border-radius:14px; background:linear-gradient(135deg,#c62828,#e53935); padding:24px; min-height:120px; position:relative; overflow:hidden;">
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.8px; font-size:11px; font-weight:600;">Pending Enrollments</MudText>
+                    <MudText Typo="Typo.h3" Style="color:#ffffff; font-weight:800; line-height:1;">@_pendingEnrollments</MudText>
+                    <MudText Typo="Typo.body2" Style="color:rgba(255,255,255,0.6); font-size:12px;">
+                        Awaiting approval
+                    </MudText>
+                </MudStack>
+                <MudIcon Icon="@Icons.Material.Filled.HowToReg" Style="position:absolute; right:16px; bottom:16px; font-size:3.5rem; color:rgba(255,255,255,0.12);" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Style="border-radius:14px; background:linear-gradient(135deg,#e65100,#f57c00); padding:24px; min-height:120px; position:relative; overflow:hidden;">
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.8px; font-size:11px; font-weight:600;">Pending Documents</MudText>
+                    <MudText Typo="Typo.h3" Style="color:#ffffff; font-weight:800; line-height:1;">@_pendingDocs</MudText>
+                    <MudText Typo="Typo.body2" Style="color:rgba(255,255,255,0.6); font-size:12px;">
+                        Need verification
+                    </MudText>
+                </MudStack>
+                <MudIcon Icon="@Icons.Material.Filled.Description" Style="position:absolute; right:16px; bottom:16px; font-size:3.5rem; color:rgba(255,255,255,0.12);" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Style="border-radius:14px; background:linear-gradient(135deg,#2e7d32,#43a047); padding:24px; min-height:120px; position:relative; overflow:hidden;">
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.8px; font-size:11px; font-weight:600;">Pending Payments</MudText>
+                    <MudText Typo="Typo.h3" Style="color:#ffffff; font-weight:800; line-height:1;">@_pendingPayments</MudText>
+                    <MudText Typo="Typo.body2" Style="color:rgba(255,255,255,0.6); font-size:12px;">
+                        Awaiting confirmation
+                    </MudText>
+                </MudStack>
+                <MudIcon Icon="@Icons.Material.Filled.Payments" Style="position:absolute; right:16px; bottom:16px; font-size:3.5rem; color:rgba(255,255,255,0.12);" />
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Row 2: Statistics Charts -->
+    <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700; margin-bottom:16px; margin-top:16px;">Statistics</MudText>
+    <MudGrid Spacing="3" Class="mb-6">
+        <!-- Student Status Pie Chart -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Style="border-radius:14px; padding:20px;">
+                <MudText Typo="Typo.subtitle1" Style="font-weight:600; margin-bottom:16px; color:#132d6e;">Student Status</MudText>
+                <div style="height: 250px; display: flex; align-items: center; justify-content: center;">
+                    <div style="position: relative; width: 180px; height: 180px;">
+                        <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#e0e0e0" stroke-width="10" />
+                            @{
+                                var total = _approvedCount + _pendingStudents + _rejectedCount;
+                                var approvedPercent = total > 0 ? (double)_approvedCount / total : 0;
+                                var pendingPercent = total > 0 ? (double)_pendingStudents / total : 0;
+                                var rejectedPercent = total > 0 ? (double)_rejectedCount / total : 0;
+                                var circumference = 283;
+                                var approvedDash = circumference * approvedPercent;
+                                var pendingDash = circumference * pendingPercent;
+                            }
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#4caf50" stroke-width="10" stroke-dasharray="@approvedDash @circumference" />
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#ff9800" stroke-width="10" stroke-dasharray="@pendingDash @circumference" stroke-dashoffset="@(-approvedDash)" />
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#f44336" stroke-width="10" stroke-dasharray="@(circumference - approvedDash - pendingDash) @circumference" stroke-dashoffset="@(-(approvedDash + pendingDash))" />
+                        </svg>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                            <MudText Typo="Typo.h5" Style="font-weight:800;">@total</MudText>
+                            <MudText Typo="Typo.caption" style="font-size:10px;">Total</MudText>
+                        </div>
+                    </div>
+                    <div style="margin-left: 20px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <div style="width: 12px; height: 12px; background: #4caf50; border-radius: 2px; margin-right: 8px;"></div>
+                            <MudText Typo="Typo.body2" style="font-size:12px;">Approved: @_approvedCount</MudText>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <div style="width: 12px; height: 12px; background: #ff9800; border-radius: 2px; margin-right: 8px;"></div>
+                            <MudText Typo="Typo.body2" style="font-size:12px;">Pending: @_pendingStudents</MudText>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 12px; height: 12px; background: #f44336; border-radius: 2px; margin-right: 8px;"></div>
+                            <MudText Typo="Typo.body2" style="font-size:12px;">Rejected: @_rejectedCount</MudText>
+                        </div>
+                    </div>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Enrollment Status Bar Chart -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Style="border-radius:14px; padding:20px;">
+                <MudText Typo="Typo.subtitle1" Style="font-weight:600; margin-bottom:16px; color:#132d6e;">Enrollment Status</MudText>
+                <div style="height: 220px;">
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <MudText Typo="Typo.body2" style="font-size:12px;">Enrolled</MudText>
+                            <MudText Typo="Typo.body2" style="font-weight:600;">@_enrolledCount</MudText>
+                        </div>
+                        <div style="background: #e0e0e0; border-radius: 8px; height: 30px; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #2e7d32, #4caf50); width: @(_enrolledPercent)%; height: 100%; border-radius: 8px; transition: width 0.5s;"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <MudText Typo="Typo.body2" style="font-size:12px;">Pending Enrollment</MudText>
+                            <MudText Typo="Typo.body2" style="font-weight:600;">@_pendingEnrollments</MudText>
+                        </div>
+                        <div style="background: #e0e0e0; border-radius: 8px; height: 30px; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #e65100, #f57c00); width: @(_pendingEnrollPercent)%; height: 100%; border-radius: 8px; transition: width 0.5s;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <MudText Typo="Typo.body2" style="font-size:12px;">Rejected Enrollment</MudText>
+                            <MudText Typo="Typo.body2" style="font-weight:600;">@_rejectedEnrollCount</MudText>
+                        </div>
+                        <div style="background: #e0e0e0; border-radius: 8px; height: 30px; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #c62828, #ef5350); width: @(_rejectedEnrollPercent)%; height: 100%; border-radius: 8px; transition: width 0.5s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Row 3: Financial Summary -->
+    <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700; margin-bottom:16px; margin-top:16px;">Financial Summary</MudText>
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="2" Style="border-radius:14px; padding:20px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudAvatar Style="background:#e8f5e9; color:#2e7d32;">
+                        <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
+                    </MudAvatar>
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.caption" Style="color:#6b7a99;">Total Collected</MudText>
+                        <MudText Typo="Typo.h5" Style="font-weight:700; color:#2e7d32;">₱@_totalCollected.ToString("N2")</MudText>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="2" Style="border-radius:14px; padding:20px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudAvatar Style="background:#fff3e0; color:#e65100;">
+                        <MudIcon Icon="@Icons.Material.Filled.Pending" />
+                    </MudAvatar>
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.caption" Style="color:#6b7a99;">Expected Revenue</MudText>
+                        <MudText Typo="Typo.h5" Style="font-weight:700; color:#e65100;">₱@_expectedRevenue.ToString("N2")</MudText>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="2" Style="border-radius:14px; padding:20px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudAvatar Style="background:#e3f2fd; color:#1565c0;">
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" />
+                    </MudAvatar>
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.caption" Style="color:#6b7a99;">This Month</MudText>
+                        <MudText Typo="Typo.h5" Style="font-weight:700; color:#1565c0;">₱@_thisMonthRevenue.ToString("N2")</MudText>
+                    </MudStack>
+                </MudStack>
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -58,17 +213,64 @@ else
 
 @code {
     bool _loading = true;
-    int _pending, _approved, _total;
+    int _totalStudents, _pendingEnrollments, _pendingDocs, _pendingPayments, _pendingStudents, _newThisMonth, _approvedCount, _rejectedCount, _enrolledCount, _rejectedEnrollCount;
+    decimal _totalCollected, _expectedRevenue, _thisMonthRevenue;
+    double _enrolledPercent = 0, _pendingEnrollPercent = 0, _rejectedEnrollPercent = 0;
 
     protected override async Task OnInitializedAsync()
     {
-        var r = await PaymentsService.GetAllPaymentsAsync();
-        if (r.Status == 200 && r.Data != null)
+        // Get all students
+        var students = await StudentsService.GetAllStudentsAsync();
+        if (students.Status == 200 && students.Data != null)
         {
-            _total = r.Data.Count;
-            _pending = r.Data.Count(p => p.PaymentStatus == "Pending");
-            _approved = r.Data.Count(p => p.PaymentStatus == "Approved");
+            _totalStudents = students.Data.Count;
+            _pendingStudents = students.Data.Count(s => s.Status == "Pending");
+            _approvedCount = students.Data.Count(s => s.Status == "Approved");
+            _rejectedCount = students.Data.Count(s => s.Status == "Rejected");
+            _newThisMonth = students.Data.Count(s => s.DateCreated.Month == DateTime.Now.Month);
         }
+
+        // Get pending enrollments
+        var enrollments = await EnrollmentService.GetAdminPendingEnrollmentsAsync();
+        if (enrollments.Status == 200 && enrollments.Data != null)
+        {
+            _pendingEnrollments = enrollments.Data.Count;
+        }
+
+        // Get all enrollments for stats
+        var allEnrollments = await EnrollmentService.GetAllEnrollmentsAsync();
+        if (allEnrollments.Status == 200 && allEnrollments.Data != null)
+        {
+            _enrolledCount = allEnrollments.Data.Count(e => e.EnrollmentStatus == "Enrolled" || e.EnrollmentStatus == "Approved");
+            _rejectedEnrollCount = allEnrollments.Data.Count(e => e.EnrollmentStatus == "Rejected");
+
+            var totalEnroll = _enrolledCount + _pendingEnrollments + _rejectedEnrollCount;
+            _enrolledPercent = totalEnroll > 0 ? (double)_enrolledCount / totalEnroll * 100 : 0;
+            _pendingEnrollPercent = totalEnroll > 0 ? (double)_pendingEnrollments / totalEnroll * 100 : 0;
+            _rejectedEnrollPercent = totalEnroll > 0 ? (double)_rejectedEnrollCount / totalEnroll * 100 : 0;
+        }
+
+        // Get pending documents
+        var docs = await DocumentsService.GetAllDocumentsWithStudentsAsync();
+        if (docs.Status == 200 && docs.Data != null)
+        {
+            _pendingDocs = docs.Data.Count(d => !d.IsApproved);
+        }
+
+        // Get pending payments
+        var payments = await PaymentService.GetPendingPaymentsAsync();
+        var allPayments = await PaymentService.GetAllPaymentsAsync();
+        if (payments.Status == 200 && payments.Data != null)
+        {
+            _pendingPayments = payments.Data.Count;
+        }
+        if (allPayments.Status == 200 && allPayments.Data != null)
+        {
+            _totalCollected = allPayments.Data.Where(p => p.PaymentStatus == "Approved").Sum(p => p.Amount);
+            _expectedRevenue = allPayments.Data.Sum(p => p.Amount);
+            _thisMonthRevenue = allPayments.Data.Where(p => p.PaymentDate.Month == DateTime.Now.Month && p.PaymentStatus == "Approved").Sum(p => p.Amount);
+        }
+
         _loading = false;
     }
 }

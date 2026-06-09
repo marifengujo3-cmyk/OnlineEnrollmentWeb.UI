@@ -13,8 +13,18 @@ public class EnrollmentService
     {
         try
         {
-            return await _http.GetFromJsonAsync<ServiceResponse<List<EnrollmentModel>>>("api/enrollment")
-                   ?? new ServiceResponse<List<EnrollmentModel>> { Status = 404, Message = "Not found" };
+            var response = await _http.GetAsync("api/Enrollment/all");
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ServiceResponse<List<EnrollmentModel>>
+                {
+                    Status = (int)response.StatusCode,
+                    Message = $"HTTP Error: {response.StatusCode}",
+                    Data = new List<EnrollmentModel>()
+                };
+            }
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<List<EnrollmentModel>>>();
+            return result ?? new ServiceResponse<List<EnrollmentModel>> { Status = 404, Message = "Not found" };
         }
         catch (Exception ex)
         {
@@ -26,12 +36,37 @@ public class EnrollmentService
     {
         try
         {
-            return await _http.GetFromJsonAsync<ServiceResponse<List<EnrollmentModel>>>("api/enrollment/pending")
-                   ?? new ServiceResponse<List<EnrollmentModel>> { Status = 404, Message = "Not found" };
+            var response = await _http.GetAsync("api/Enrollment/pending");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ServiceResponse<List<EnrollmentModel>>
+                {
+                    Status = (int)response.StatusCode,
+                    Message = $"HTTP Error: {response.StatusCode}",
+                    Data = new List<EnrollmentModel>(),
+                    Success = false
+                };
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<List<EnrollmentModel>>>();
+            return result ?? new ServiceResponse<List<EnrollmentModel>>
+            {
+                Status = 404,
+                Message = "Not found",
+                Data = new List<EnrollmentModel>(),
+                Success = false
+            };
         }
         catch (Exception ex)
         {
-            return new ServiceResponse<List<EnrollmentModel>> { Status = 500, Message = ex.Message };
+            return new ServiceResponse<List<EnrollmentModel>>
+            {
+                Status = 500,
+                Message = ex.Message,
+                Data = new List<EnrollmentModel>(),
+                Success = false
+            };
         }
     }
 
@@ -39,13 +74,37 @@ public class EnrollmentService
     {
         try
         {
-            var response = await _http.PostAsync($"api/enrollment/{enrollmentId}/approve", null);
-            return await response.Content.ReadFromJsonAsync<ServiceResponse<string>>()
-                   ?? new ServiceResponse<string> { Status = 500, Message = "Empty response" };
+            var response = await _http.PostAsync($"api/Enrollment/{enrollmentId}/approve", null);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ServiceResponse<string>
+                {
+                    Status = (int)response.StatusCode,
+                    Message = $"HTTP Error: {response.StatusCode}",
+                    Data = null,
+                    Success = false
+                };
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<string>>();
+            return result ?? new ServiceResponse<string>
+            {
+                Status = 500,
+                Message = "Empty response",
+                Data = null,
+                Success = false
+            };
         }
         catch (Exception ex)
         {
-            return new ServiceResponse<string> { Status = 500, Message = ex.Message };
+            return new ServiceResponse<string>
+            {
+                Status = 500,
+                Message = ex.Message,
+                Data = null,
+                Success = false
+            };
         }
     }
 
@@ -53,13 +112,181 @@ public class EnrollmentService
     {
         try
         {
-            var response = await _http.PostAsync($"api/enrollment/{enrollmentId}/reject", null);
-            return await response.Content.ReadFromJsonAsync<ServiceResponse<string>>()
-                   ?? new ServiceResponse<string> { Status = 500, Message = "Empty response" };
+            var response = await _http.PostAsync($"api/Enrollment/{enrollmentId}/reject", null);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ServiceResponse<string>
+                {
+                    Status = (int)response.StatusCode,
+                    Message = $"HTTP Error: {response.StatusCode}",
+                    Data = null,
+                    Success = false
+                };
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<string>>();
+            return result ?? new ServiceResponse<string>
+            {
+                Status = 500,
+                Message = "Empty response",
+                Data = null,
+                Success = false
+            };
         }
         catch (Exception ex)
         {
-            return new ServiceResponse<string> { Status = 500, Message = ex.Message };
+            return new ServiceResponse<string>
+            {
+                Status = 500,
+                Message = ex.Message,
+                Data = null,
+                Success = false
+            };
+        }
+    }
+
+    public async Task<ServiceResponse<List<EnrollmentModel>>> GetAdminPendingEnrollmentsAsync()
+    {
+        try
+        {
+            var response = await _http.GetAsync("api/Enrollment/admin-pending");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ServiceResponse<List<EnrollmentModel>>
+                {
+                    Status = (int)response.StatusCode,
+                    Message = $"HTTP Error: {response.StatusCode}",
+                    Data = new List<EnrollmentModel>(),
+                    Success = false
+                };
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<List<EnrollmentModel>>>();
+            return result ?? new ServiceResponse<List<EnrollmentModel>>
+            {
+                Status = 404,
+                Message = "Not found",
+                Data = new List<EnrollmentModel>(),
+                Success = false
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ServiceResponse<List<EnrollmentModel>>
+            {
+                Status = 500,
+                Message = ex.Message,
+                Data = new List<EnrollmentModel>(),
+                Success = false
+            };
+        }
+    }
+
+    public async Task<ServiceResponse<List<EnrollmentModel>>> GetApprovedEnrollmentsAsync()
+    {
+        try
+        {
+            var response = await _http.GetAsync("api/Enrollment/approved");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ServiceResponse<List<EnrollmentModel>>
+                {
+                    Status = (int)response.StatusCode,
+                    Message = $"HTTP Error: {response.StatusCode}",
+                    Data = new List<EnrollmentModel>(),
+                    Success = false
+                };
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<List<EnrollmentModel>>>();
+            return result ?? new ServiceResponse<List<EnrollmentModel>>
+            {
+                Status = 404,
+                Message = "Not found",
+                Data = new List<EnrollmentModel>(),
+                Success = false
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ServiceResponse<List<EnrollmentModel>>
+            {
+                Status = 500,
+                Message = ex.Message,
+                Data = new List<EnrollmentModel>(),
+                Success = false
+            };
+        }
+    }
+
+    public async Task<ServiceResponse<EnrollmentModel>> AdminApproveEnrollmentAsync(int enrollmentId)
+    {
+        try
+        {
+            var response = await _http.PostAsync($"api/Enrollment/admin-approve/{enrollmentId}", null);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ServiceResponse<EnrollmentModel>
+                {
+                    Status = (int)response.StatusCode,
+                    Message = $"HTTP Error: {response.StatusCode}",
+                    Data = null,
+                    Success = false
+                };
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<EnrollmentModel>>();
+            return result ?? new ServiceResponse<EnrollmentModel>
+            {
+                Status = 500,
+                Message = "Empty response",
+                Data = null,
+                Success = false
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ServiceResponse<EnrollmentModel>
+            {
+                Status = 500,
+                Message = ex.Message,
+                Data = null,
+                Success = false
+            };
+        }
+    }
+
+    public async Task<ServiceResponse<EnrollmentModel>> AdminRejectEnrollmentAsync(int enrollmentId)
+    {
+        try
+        {
+            Console.WriteLine($"EnrollmentService: Rejecting enrollment {enrollmentId}");
+            var response = await _http.PostAsync($"api/Enrollment/admin-reject/{enrollmentId}", null);
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<EnrollmentModel>>();
+            Console.WriteLine($"EnrollmentService: Response status {result?.Status}");
+            return result ?? new ServiceResponse<EnrollmentModel> { Status = 500, Message = "Empty response", Success = false };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"EnrollmentService: Error {ex.Message}");
+            return new ServiceResponse<EnrollmentModel> { Status = 500, Message = ex.Message, Success = false };
+        }
+    }
+    public async Task<ServiceResponse<EnrollmentModel>> CompleteEnrollmentAsync(int enrollmentId)
+    {
+        try
+        {
+            var response = await _http.PostAsync($"api/Enrollment/{enrollmentId}/complete", null);
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<EnrollmentModel>>();
+            return result ?? new ServiceResponse<EnrollmentModel> { Status = 500, Message = "Empty response" };
+        }
+        catch (Exception ex)
+        {
+            return new ServiceResponse<EnrollmentModel> { Status = 500, Message = ex.Message };
         }
     }
 }

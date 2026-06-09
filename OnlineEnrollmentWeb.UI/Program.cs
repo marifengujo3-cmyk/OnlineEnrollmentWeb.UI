@@ -5,6 +5,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using OnlineEnrollmentWeb.UI;
 using OnlineEnrollmentWeb.UI.Data;
+using OnlineEnrollmentWeb.UI.Pages.Admin;
 
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -15,18 +16,19 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddBlazoredLocalStorage();
 
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://192.168.1.8:5080/") });
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://172.20.10.3:5080/") });
 
 builder.Services.AddMudServices();
 
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<StudentsService>();
-builder.Services.AddScoped<GradesService>();
+
 builder.Services.AddScoped<EnrollmentService>();
-builder.Services.AddScoped<PaymentsService>();
+builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<DocumentsService>();
-builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<EligibilityService>();
+
 
 
 await builder.Build().RunAsync();

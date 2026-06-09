@@ -1,0 +1,186 @@
+﻿@page "/registrar/student-documents/{StudentId:int}"
+@layout MainLayout
+@inject DocumentsService DocumentsService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject NavigationManager nav
+
+<PageTitle>Student Documents</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">Student Documents</MudText>
+        <MudText Typo="Typo.body2" Style="color:#6b7a99;">
+            @_studentName (@_studentNumber)
+        </MudText>
+    </MudStack>
+    <MudButton Variant="Variant.Outlined" OnClick="@(() => nav.NavigateTo("/registrar/documents"))">
+        <MudIcon Icon="@Icons.Material.Filled.ArrowBack" />
+        Back to Documents
+    </MudButton>
+</MudStack>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_documents.Count == 0)
+{
+    <MudPaper Elevation="2" Style="border-radius:14px; padding:48px; text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.FolderOff" Style="font-size:3rem; color:#c7d2f0;" />
+        <MudText Style="color:#6b7a99; margin-top:16px;">No documents found for this student</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudPaper Elevation="2" Style="border-radius:14px; overflow:hidden;">
+        <MudTable Items="_documents" Hover="true" Elevation="0">
+            <HeaderContent>
+                <MudTh>Document Type</MudTh>
+                <MudTh>Uploaded Date</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.DocumentType</MudTd>
+                <MudTd>@context.UploadedDate.ToString("MMM dd, yyyy")</MudTd>
+                <MudTd>
+                    @if (context.Status == "Approved")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#dcfce7; color:#065F46; font-weight:600;">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="font-size:0.8rem; margin-right:4px;" />
+                            Approved
+                        </MudChip>
+                    }
+                    else if (context.Status == "Rejected")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fee2e2; color:#991b1b; font-weight:600;">
+                            <MudIcon Icon="@Icons.Material.Filled.Cancel" Style="font-size:0.8rem; margin-right:4px;" />
+                            Rejected
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fff3cd; color:#856404; font-weight:600;">
+                            <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Style="font-size:0.8rem; margin-right:4px;" />
+                            Pending
+                        </MudChip>
+                    }
+                </MudTd>
+                <MudTd>
+                    <MudStack Row="true" Spacing="1">
+                        <MudButton Variant="Variant.Text"
+                                   Size="Size.Small"
+                                   Style="background:#eff6ff; color:#3b82f6; font-weight:600; border-radius:8px; padding:6px 12px;"
+                                   OnClick="@(() => ViewDocument(context))">
+                            View
+                        </MudButton>
+
+                        @if (context.Status == "Pending")
+                        {
+                            <MudButton Variant="Variant.Text"
+                                       Size="Size.Small"
+                                       Style="background:#dcfce7; color:#065F46; font-weight:600; border-radius:8px; padding:6px 12px;"
+                                       OnClick="@(() => ApproveDocument(context))"
+                                       Disabled="_processingIds.Contains(context.DocumentID)">
+                                Approve
+                            </MudButton>
+
+                            <MudButton Variant="Variant.Text"
+                                       Size="Size.Small"
+                                       Style="background:#fee2e2; color:#dc2626; font-weight:600; border-radius:8px; padding:6px 12px;"
+                                       OnClick="@(() => RejectDocument(context))"
+                                       Disabled="_processingIds.Contains(context.DocumentID)">
+                                Reject
+                            </MudButton>
+                        }
+                    </MudStack>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public int StudentId { get; set; }
+
+    private List<DocumentModel> _documents = new();
+    private HashSet<int> _processingIds = new();
+    private string _studentName = "";
+    private string _studentNumber = "";
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDocuments();
+    }
+
+    private async Task LoadDocuments()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var studentResult = await DocumentsService.GetStudentByIdAsync(StudentId);
+        if (studentResult.Status == 200 && studentResult.Data != null)
+        {
+            _studentName = studentResult.Data.FullName;
+            _studentNumber = studentResult.Data.StudentNumber;
+        }
+        else
+        {
+            _studentName = $"Student ID: {StudentId}";
+            _studentNumber = "";
+        }
+
+        var result = await DocumentsService.GetDocumentsByStudentAsync(StudentId);
+        if (result.Status == 200 && result.Data != null)
+        {
+            _documents = result.Data;
+        }
+        else
+        {
+            _documents = new List<DocumentModel>();
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task ViewDocument(DocumentModel doc)
+    {
+        var url = $"http://172.20.10.3:5080/api/Document/documents/view-image/{doc.DocumentID}";
+        await JS.InvokeVoidAsync("open", url, "_blank");
+    }
+
+    private async Task ApproveDocument(DocumentModel doc)
+    {
+        _processingIds.Add(doc.DocumentID);
+        StateHasChanged();
+
+        var result = await DocumentsService.ApproveDocumentAsync(doc.DocumentID);
+        Snackbar.Add(result.Status == 200 ? "Document approved!" : $"Error: {result.Message}",
+                     result.Status == 200 ? Severity.Success : Severity.Error);
+
+        _processingIds.Remove(doc.DocumentID);
+        if (result.Status == 200)
+        {
+            await LoadDocuments();
+        }
+    }
+
+    private async Task RejectDocument(DocumentModel doc)
+    {
+        _processingIds.Add(doc.DocumentID);
+        StateHasChanged();
+
+        var result = await DocumentsService.RejectDocumentAsync(doc.DocumentID);
+        Snackbar.Add(result.Status == 200 ? "Document rejected" : $"Error: {result.Message}",
+                     result.Status == 200 ? Severity.Warning : Severity.Error);
+
+        _processingIds.Remove(doc.DocumentID);
+        if (result.Status == 200)
+        {
+            await LoadDocuments();
+        }
+    }
+}

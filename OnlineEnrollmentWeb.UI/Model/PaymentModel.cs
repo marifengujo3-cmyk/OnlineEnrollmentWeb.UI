@@ -4,8 +4,19 @@ public class PaymentModel
 {
     public int PaymentID { get; set; }
     public int EnrollmentID { get; set; }
+    public int StudentID { get; set; }
+    public string StudentNumber { get; set; } = "";
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
+    public string FullName => $"{FirstName} {LastName}";
+    public string Course { get; set; } = "";
+    public string YearLevel { get; set; } = "";
+    public string SchoolYear { get; set; } = "";
+    public string Semester { get; set; } = "";
     public decimal Amount { get; set; }
-    // Pending / Approved / Rejected
-    public string PaymentStatus { get; set; } = string.Empty;
+    public string PaymentStatus { get; set; } = "";
     public DateTime PaymentDate { get; set; }
+    public string? ReferenceNumber { get; set; }
+    public string? PaymentMethod { get; set; }
+    public string? Remarks { get; set; }
 }

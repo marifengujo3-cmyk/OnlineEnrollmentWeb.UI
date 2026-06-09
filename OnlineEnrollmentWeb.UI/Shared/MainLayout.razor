@@ -2,6 +2,11 @@
 @inject AuthService AuthService
 @inject NavigationManager Nav
 
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
 <MudLayout>
 
     <!-- SIDEBAR -->
@@ -43,25 +48,25 @@
                             Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
                     Dashboard
                 </MudNavLink>
-                <MudNavLink Href="/admin/pending-enrollments"
+                <MudNavLink Href="/admin/enrollments"
                             Icon="@Icons.Material.Filled.HowToReg"
                             Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
-                    Pending Enrollments
+                    Enrollments
                 </MudNavLink>
-                <MudNavLink Href="/admin/pending-documents"
-                            Icon="@Icons.Material.Filled.Description"
+                <MudNavLink Href="/admin/all-students"
+                            Icon="@Icons.Material.Filled.People"
                             Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
-                    Documents
+                     Students Information
                 </MudNavLink>
                 <MudNavLink Href="/admin/create-student-account"
                             Icon="@Icons.Material.Filled.PersonAdd"
                             Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
                     Create Student
                 </MudNavLink>
-                <MudNavLink Href="/admin/all-students"
+                <MudNavLink Href="/admin/students"
                             Icon="@Icons.Material.Filled.People"
                             Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
-                    Students
+                    Student Management
                 </MudNavLink>
             }
             else if (_user?.Role == "Registrar")
@@ -75,15 +80,20 @@
                             Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
                     Dashboard
                 </MudNavLink>
-                <MudNavLink Href="/registrar/pending-enrollment"
-                            Icon="@Icons.Material.Filled.Assignment"
+                <MudNavLink Href="/registrar/documents"
+                            Icon="@Icons.Material.Filled.Description"
                             Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
-                    Pending Enrollment
+                    Documents
                 </MudNavLink>
-                <MudNavLink Href="/registrar/grades"
-                            Icon="@Icons.Material.Filled.School"
+                <MudNavLink Href="/registrar/eligibility"
+                            Icon="@Icons.Material.Filled.Verified"
                             Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
-                    Grades
+                    Student Eligibility
+                </MudNavLink>
+                <MudNavLink Href="/registrar/students"
+                            Icon="@Icons.Material.Filled.ReceiptLong"
+                            Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
+                    Student Management
                 </MudNavLink>
             }
             else if (_user?.Role == "Cashier")
@@ -106,6 +116,11 @@
                             Icon="@Icons.Material.Filled.ReceiptLong"
                             Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
                     Payments
+                </MudNavLink>
+                <MudNavLink Href="/cashier/students"
+                            Icon="@Icons.Material.Filled.ReceiptLong"
+                            Style="color:rgba(255,255,255,0.85); border-radius:10px; margin: 2px 10px;">
+                    Student Management
                 </MudNavLink>
             }
 
@@ -221,16 +236,21 @@
     private string _pageTitle => Nav.Uri switch
     {
         var u when u.EndsWith("/admin") => "Dashboard",
+        var u when u.Contains("enrollments") => "Enrollments",
         var u when u.Contains("pending-enrollments") => "Pending Enrollments",
-        var u when u.Contains("pending-documents") => "Documents",
+        var u when u.Contains("approved-enrollments") => "Approved Enrollments",
         var u when u.Contains("create-student-account") => "Create Student Account",
-        var u when u.Contains("all-students") => "All Students",
+        var u when u.Contains("all-students") => "Students Information",
+        var u when u.Contains("students") => " All Students Management",
         var u when u.EndsWith("/registrar") => "Dashboard",
-        var u when u.Contains("registrar/pending-enrollment") => "Pending Enrollment",
-        var u when u.Contains("registrar/grades") => "Grades",
+        var u when u.Contains("registrar/pending-enrollment") => "All Students",
+        var u when u.Contains("documents") => "Documents",
+        var u when u.Contains("registrar/eligibility") => "Student Eligibility",
+        var u when u.Contains("registrar/students") => " All Students Management",
         var u when u.EndsWith("/cashier") => "Dashboard",
         var u when u.Contains("pending-payments") => "Pending Payments",
         var u when u.Contains("all-payments") => "Payments",
+        var u when u.Contains("cashier/students") => " All Students Management",
         _ => "Dashboard"
     };
 

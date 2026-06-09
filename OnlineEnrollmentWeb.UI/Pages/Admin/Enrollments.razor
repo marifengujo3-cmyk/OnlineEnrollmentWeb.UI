@@ -1,18 +1,18 @@
-﻿@page "/admin/all-students"
+﻿@page "/admin/enrollments"
 @layout MainLayout
-@inject StudentsService StudentsService
+@inject EnrollmentService EnrollmentService
 @inject ISnackbar Snackbar
 
-<PageTitle>All Students</PageTitle>
+<PageTitle>Enrollment Management</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.False" Style="padding: 0;">
 
     <!-- Header -->
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
-            <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">All Students</MudText>
+            <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">Enrollment Management</MudText>
             <MudText Typo="Typo.body2" Style="color:#6b7a99;">
-                Total: @_totalStudents student(s) | Showing @_pagedStudents.Count of @_filteredTotal
+                Total: @_filteredTotal enrollment(s) | Showing @_pagedEnrollments.Count of @_filteredTotal
             </MudText>
         </MudStack>
     </MudStack>
@@ -21,26 +21,20 @@
     <MudGrid Spacing="3" Class="mb-4">
         <MudItem xs="6" sm="3">
             <MudPaper Style="padding:16px; text-align:center; background:#eef2ff;">
-                <MudText Typo="Typo.h4" Style="color:#132d6e; font-weight:800;">@_pendingCount</MudText>
+                <MudText Typo="Typo.h4" Style="color:#132d6e; font-weight:800;">@_allEnrollments.Count(e => e.EnrollmentStatus == "Pending")</MudText>
                 <MudText Typo="Typo.body2" Style="color:#132d6e;">Pending</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="6" sm="3">
             <MudPaper Style="padding:16px; text-align:center; background:#dcfce7;">
-                <MudText Typo="Typo.h4" Style="color:#065F46; font-weight:800;">@_approvedCount</MudText>
+                <MudText Typo="Typo.h4" Style="color:#065F46; font-weight:800;">@_allEnrollments.Count(e => e.EnrollmentStatus == "Approved")</MudText>
                 <MudText Typo="Typo.body2" Style="color:#065F46;">Approved</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="6" sm="3">
             <MudPaper Style="padding:16px; text-align:center; background:#fee2e2;">
-                <MudText Typo="Typo.h4" Style="color:#991b1b; font-weight:800;">@_rejectedCount</MudText>
+                <MudText Typo="Typo.h4" Style="color:#991b1b; font-weight:800;">@_allEnrollments.Count(e => e.EnrollmentStatus == "Rejected")</MudText>
                 <MudText Typo="Typo.body2" Style="color:#991b1b;">Rejected</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6" sm="3">
-            <MudPaper Style="padding:16px; text-align:center; background:#dbeafe;">
-                <MudText Typo="Typo.h4" Style="color:#1e40af; font-weight:800;">@_newCount</MudText>
-                <MudText Typo="Typo.body2" Style="color:#1e40af;">New Students</MudText>
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -49,10 +43,10 @@
     <MudPaper Style="padding:16px; margin-bottom:24px; border-radius:14px;">
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <MudTextField @bind-Value="_searchTerm"
-                          Placeholder="Search by Name, Student ID, or Student #..."
+                          Placeholder="Search by Name, ID, or Student #..."
                           Variant="Variant.Outlined"
                           Size="Size.Small"
-                          Style="min-width:250px; flex:2;"
+                          Style="min-width:200px; flex:2;"
                           Immediate="true"
                           OnKeyUp="@(() => ApplyFilters())" />
 
@@ -63,10 +57,34 @@
                 <option value="Rejected">Rejected</option>
             </select>
 
-            <select @bind="_selectedType" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 130px;">
-                <option value="all">All Types</option>
-                <option value="New">New Student</option>
-                <option value="Old">Old Student</option>
+            <select @bind="_selectedCourse" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 180px;">
+                <option value="">All Courses</option>
+                <option value="BS Information Technology">BS Information Technology</option>
+                <option value="BS Computer Science">BS Computer Science</option>
+                <option value="BS Accountancy">BS Accountancy</option>
+                <option value="BS Business Administration">BS Business Administration</option>
+                <option value="BS Hospitality Management">BS Hospitality Management</option>
+            </select>
+
+            <select @bind="_selectedYearLevel" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 130px;">
+                <option value="0">All Years</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+            </select>
+
+            <select @bind="_selectedSemester" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 140px;">
+                <option value="">All Semesters</option>
+                <option value="1st Semester">1st Semester</option>
+                <option value="2nd Semester">2nd Semester</option>
+            </select>
+
+            <select @bind="_selectedSchoolYear" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 140px;">
+                <option value="">All School Years</option>
+                <option value="2024-2025">2024-2025</option>
+                <option value="2025-2026">2025-2026</option>
+                <option value="2026-2027">2026-2027</option>
             </select>
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@ApplyFilters">Apply</MudButton>
@@ -78,23 +96,25 @@
     {
         <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
     }
-    else if (!_pagedStudents.Any())
+    else if (!_pagedEnrollments.Any())
     {
         <MudPaper Style="text-align:center; padding:60px; border-radius:14px;">
-            <MudIcon Icon="@Icons.Material.Filled.PeopleOutline" Size="Size.Large" Style="color:#c7d2f0; font-size:48px;" />
-            <MudText Style="color:#6b7a99;">No students found</MudText>
+            <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn" Size="Size.Large" Style="color:#c7d2f0; font-size:48px;" />
+            <MudText Style="color:#6b7a99;">No enrollments found</MudText>
         </MudPaper>
     }
     else
     {
         <MudPaper Elevation="2" Style="border-radius:14px; overflow-x:auto;">
-            <MudTable Items="_pagedStudents" Hover="true" Style="border-radius:14px; min-width:800px;">
+            <MudTable Items="_pagedEnrollments" Hover="true" Style="border-radius:14px; min-width:1000px;">
                 <HeaderContent>
                     <MudTh>Student ID</MudTh>
                     <MudTh>Student #</MudTh>
                     <MudTh>Student Name</MudTh>
-                    <MudTh>Email</MudTh>
-                    <MudTh>Type</MudTh>
+                    <MudTh>Course</MudTh>
+                    <MudTh>Year</MudTh>
+                    <MudTh>Semester</MudTh>
+                    <MudTh>School Year</MudTh>
                     <MudTh>Status</MudTh>
                     <MudTh>Actions</MudTh>
                 </HeaderContent>
@@ -102,39 +122,32 @@
                     <MudTd>@context.StudentID</MudTd>
                     <MudTd>@context.StudentNumber</MudTd>
                     <MudTd>@context.FullName</MudTd>
-                    <MudTd>@context.Email</MudTd>
+                    <MudTd>@context.Course</MudTd>
+                    <MudTd>@context.YearLevel</MudTd>
+                    <MudTd>@context.Semester</MudTd>
+                    <MudTd>@context.SchoolYear</MudTd>
                     <MudTd>
-                        @if (context.StudentType == "New")
-                        {
-                            <span style="background:#eef2ff; color:#132d6e; padding:4px 8px; border-radius:16px; font-size:12px;">New</span>
-                        }
-                        else
-                        {
-                            <span style="background:#dcfce7; color:#065F46; padding:4px 8px; border-radius:16px; font-size:12px;">Old</span>
-                        }
-                    </MudTd>
-                    <MudTd>
-                        @if (context.Status == "Pending")
+                        @if (context.EnrollmentStatus == "Pending")
                         {
                             <span style="background:#fff3cd; color:#856404; padding:4px 8px; border-radius:16px; font-size:12px;">Pending</span>
                         }
-                        else if (context.Status == "Approved")
+                        else if (context.EnrollmentStatus == "Approved")
                         {
                             <span style="background:#dcfce7; color:#065F46; padding:4px 8px; border-radius:16px; font-size:12px;">Approved</span>
                         }
                         else
                         {
-                            <span style="background:#fee2e2; color:#991b1b; padding:4px 8px; border-radius:16px; font-size:12px;">@context.Status</span>
+                            <span style="background:#fee2e2; color:#991b1b; padding:4px 8px; border-radius:16px; font-size:12px;">@context.EnrollmentStatus</span>
                         }
                     </MudTd>
                     <MudTd>
-                        @if (context.Status == "Pending")
+                        @if (context.EnrollmentStatus == "Pending")
                         {
                             <MudStack Row="true" Spacing="1">
-                                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" OnClick="@(() => ApproveStudent(context))">
+                                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" OnClick="@(() => ApproveEnrollment(context.EnrollmentID))">
                                     Approve
                                 </MudButton>
-                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="@(() => RejectStudent(context))">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="@(() => RejectEnrollment(context.EnrollmentID))">
                                     Reject
                                 </MudButton>
                             </MudStack>
@@ -175,29 +188,28 @@
 </MudContainer>
 
 @code {
-    private List<StudentModel> _allStudents = new();
-    private List<StudentModel> _filteredStudents = new();
-    private List<StudentModel> _pagedStudents = new();
+    private List<EnrollmentModel> _allEnrollments = new();
+    private List<EnrollmentModel> _filteredEnrollments = new();
+    private List<EnrollmentModel> _pagedEnrollments = new();
     private bool _loading = true;
 
     // Filters
     private string _searchTerm = "";
     private string _selectedStatus = "all";
-    private string _selectedType = "all";
+    private string _selectedCourse = "";
+    private string _selectedYearLevel = "";
+    private string _selectedSemester = "";
+    private string _selectedSchoolYear = "";
 
     // Counts
-    private int _totalStudents = 0;
     private int _filteredTotal = 0;
-    private int _pendingCount = 0;
-    private int _approvedCount = 0;
-    private int _rejectedCount = 0;
-    private int _newCount = 0;
 
     // Pagination
     private int _currentPage = 1;
     private int _pageSize = 20;
     private int _totalPages = 1;
 
+    // Property for page size binding
     private int PageSize
     {
         get => _pageSize;
@@ -213,30 +225,24 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadStudents();
+        await LoadEnrollments();
     }
 
-    private async Task LoadStudents()
+    private async Task LoadEnrollments()
     {
         _loading = true;
         StateHasChanged();
 
-        var response = await StudentsService.GetAllStudentsAsync();
+        var result = await EnrollmentService.GetAllEnrollmentsAsync();
 
-        if (response.Status == 200 && response.Data != null)
+        if (result.Status == 200 && result.Data != null)
         {
-            _allStudents = response.Data;
-            _totalStudents = _allStudents.Count;
-
-            _pendingCount = _allStudents.Count(s => s.Status == "Pending");
-            _approvedCount = _allStudents.Count(s => s.Status == "Approved");
-            _rejectedCount = _allStudents.Count(s => s.Status == "Rejected");
-            _newCount = _allStudents.Count(s => s.StudentType == "New");
+            _allEnrollments = result.Data;
         }
         else
         {
-            _allStudents = new List<StudentModel>();
-            Snackbar.Add(response.Message ?? "Error loading students", Severity.Error);
+            _allEnrollments = new List<EnrollmentModel>();
+            Snackbar.Add(result.Message ?? "Error loading enrollments", Severity.Error);
         }
 
         ApplyFilters();
@@ -246,37 +252,55 @@
 
     private void ApplyFilters()
     {
-        var query = _allStudents.AsEnumerable();
+        var query = _allEnrollments.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(_searchTerm))
         {
-            query = query.Where(s =>
-                s.FullName?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) == true ||
-                s.StudentID.ToString().Contains(_searchTerm) ||
-                (s.StudentNumber?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) == true));
+            query = query.Where(e =>
+                e.FullName?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) == true ||
+                e.StudentNumber?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) == true ||
+                e.StudentID.ToString().Contains(_searchTerm));
         }
 
         if (_selectedStatus != "all")
         {
-            query = query.Where(s => s.Status == _selectedStatus);
+            query = query.Where(e => e.EnrollmentStatus == _selectedStatus);
         }
 
-        if (_selectedType != "all")
+        if (!string.IsNullOrEmpty(_selectedCourse))
         {
-            query = query.Where(s => s.StudentType == _selectedType);
+            query = query.Where(e => e.Course == _selectedCourse);
         }
 
-        _filteredStudents = query.OrderByDescending(s => s.StudentID).ToList();
-        _filteredTotal = _filteredStudents.Count;
+        if (!string.IsNullOrEmpty(_selectedYearLevel) && _selectedYearLevel != "0")
+        {
+            query = query.Where(e => e.YearLevel == _selectedYearLevel);
+        }
 
+        if (!string.IsNullOrEmpty(_selectedSemester))
+        {
+            query = query.Where(e => e.Semester == _selectedSemester);
+        }
+
+        if (!string.IsNullOrEmpty(_selectedSchoolYear))
+        {
+            query = query.Where(e => e.SchoolYear == _selectedSchoolYear);
+        }
+
+        _filteredEnrollments = query.OrderByDescending(e => e.EnrollmentID).ToList();
+        _filteredTotal = _filteredEnrollments.Count;
+
+        // Calculate total pages
         _totalPages = (int)Math.Ceiling((double)_filteredTotal / _pageSize);
 
+        // Ensure current page is valid
         if (_currentPage > _totalPages && _totalPages > 0)
             _currentPage = _totalPages;
         if (_currentPage < 1)
             _currentPage = 1;
 
-        _pagedStudents = _filteredStudents
+        // Apply pagination
+        _pagedEnrollments = _filteredEnrollments
             .Skip((_currentPage - 1) * _pageSize)
             .Take(_pageSize)
             .ToList();
@@ -295,19 +319,22 @@
     {
         _searchTerm = "";
         _selectedStatus = "all";
-        _selectedType = "all";
+        _selectedCourse = "";
+        _selectedYearLevel = "";
+        _selectedSemester = "";
+        _selectedSchoolYear = "";
         _currentPage = 1;
         ApplyFilters();
         Snackbar.Add("Filters cleared", Severity.Info);
     }
 
-    private async Task ApproveStudent(StudentModel student)
+    private async Task ApproveEnrollment(int id)
     {
-        var result = await StudentsService.ApproveStudentAsync(student.StudentID);
+        var result = await EnrollmentService.AdminApproveEnrollmentAsync(id);
         if (result.Status == 200)
         {
-            Snackbar.Add($"Student {student.FullName} approved!", Severity.Success);
-            await LoadStudents();
+            Snackbar.Add("Enrollment approved!", Severity.Success);
+            await LoadEnrollments();
         }
         else
         {
@@ -315,13 +342,16 @@
         }
     }
 
-    private async Task RejectStudent(StudentModel student)
+    private async Task RejectEnrollment(int id)
     {
-        var result = await StudentsService.RejectStudentAsync(student.StudentID);
+        Console.WriteLine($"Rejecting enrollment ID: {id}");
+        var result = await EnrollmentService.AdminRejectEnrollmentAsync(id);
+        Console.WriteLine($"Result: {result.Status} - {result.Message}");
+
         if (result.Status == 200)
         {
-            Snackbar.Add($"Student {student.FullName} rejected", Severity.Warning);
-            await LoadStudents();
+            Snackbar.Add("Enrollment rejected!", Severity.Warning);
+            await LoadEnrollments();
         }
         else
         {

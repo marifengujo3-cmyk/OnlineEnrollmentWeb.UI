@@ -4,17 +4,25 @@ using OnlineEnrollmentWeb.UI.Model.Response;
 
 namespace OnlineEnrollmentWeb.UI.Data;
 
-public class PaymentsService
+public class PaymentService
 {
     private readonly HttpClient _http;
-    public PaymentsService(HttpClient http) => _http = http;
 
-    public async Task<ServiceResponse<List<PaymentModel>>> GetAllPaymentsAsync()
+    public PaymentService(HttpClient http)
+    {
+        _http = http;
+    }
+    // GET pending payments (for cashier approval)
+    public async Task<ServiceResponse<List<PaymentModel>>> GetPendingPaymentsAsync(string searchTerm = null)
     {
         try
         {
-            return await _http.GetFromJsonAsync<ServiceResponse<List<PaymentModel>>>("api/payment")
-                   ?? new ServiceResponse<List<PaymentModel>> { Status = 404, Message = "Not found" };
+            var url = "api/Payment/pending";
+            if (!string.IsNullOrEmpty(searchTerm))
+                url += $"?search={Uri.EscapeDataString(searchTerm)}";
+
+            var response = await _http.GetFromJsonAsync<ServiceResponse<List<PaymentModel>>>(url);
+            return response ?? new ServiceResponse<List<PaymentModel>> { Status = 404, Message = "No data found" };
         }
         catch (Exception ex)
         {
@@ -22,12 +30,17 @@ public class PaymentsService
         }
     }
 
-    public async Task<ServiceResponse<List<PaymentModel>>> GetPendingPaymentsAsync()
+    // GET approved payments (for viewing history)
+    public async Task<ServiceResponse<List<PaymentModel>>> GetApprovedPaymentsAsync(string searchTerm = null)
     {
         try
         {
-            return await _http.GetFromJsonAsync<ServiceResponse<List<PaymentModel>>>("api/payment/pending")
-                   ?? new ServiceResponse<List<PaymentModel>> { Status = 404, Message = "Not found" };
+            var url = "api/Payment/approved";
+            if (!string.IsNullOrEmpty(searchTerm))
+                url += $"?search={Uri.EscapeDataString(searchTerm)}";
+
+            var response = await _http.GetFromJsonAsync<ServiceResponse<List<PaymentModel>>>(url);
+            return response ?? new ServiceResponse<List<PaymentModel>> { Status = 404, Message = "No data found" };
         }
         catch (Exception ex)
         {
@@ -35,31 +48,51 @@ public class PaymentsService
         }
     }
 
-    public async Task<ServiceResponse<string>> ApprovePaymentAsync(int paymentId)
+    // GET all payments (with filter by status)
+    public async Task<ServiceResponse<List<PaymentModel>>> GetAllPaymentsAsync(string searchTerm = null)
     {
         try
         {
-            var response = await _http.PostAsync($"api/payment/{paymentId}/approve", null);
-            return await response.Content.ReadFromJsonAsync<ServiceResponse<string>>()
-                   ?? new ServiceResponse<string> { Status = 500, Message = "Empty response" };
+            var url = "api/Payment/all";
+            if (!string.IsNullOrEmpty(searchTerm))
+                url += $"?search={Uri.EscapeDataString(searchTerm)}";
+
+            var response = await _http.GetFromJsonAsync<ServiceResponse<List<PaymentModel>>>(url);
+            return response ?? new ServiceResponse<List<PaymentModel>> { Status = 404, Message = "No data found" };
         }
         catch (Exception ex)
         {
-            return new ServiceResponse<string> { Status = 500, Message = ex.Message };
+            return new ServiceResponse<List<PaymentModel>> { Status = 500, Message = ex.Message };
         }
     }
 
-    public async Task<ServiceResponse<string>> RejectPaymentAsync(int paymentId)
+    // POST approve payment
+    public async Task<ServiceResponse<PaymentModel>> ApprovePaymentAsync(int paymentId)
     {
         try
         {
-            var response = await _http.PostAsync($"api/payment/{paymentId}/reject", null);
-            return await response.Content.ReadFromJsonAsync<ServiceResponse<string>>()
-                   ?? new ServiceResponse<string> { Status = 500, Message = "Empty response" };
+            var response = await _http.PostAsync($"api/Payment/approve/{paymentId}", null);
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<PaymentModel>>();
+            return result ?? new ServiceResponse<PaymentModel> { Status = 500, Message = "Empty response" };
         }
         catch (Exception ex)
         {
-            return new ServiceResponse<string> { Status = 500, Message = ex.Message };
+            return new ServiceResponse<PaymentModel> { Status = 500, Message = ex.Message };
+        }
+    }
+
+    // POST reject payment
+    public async Task<ServiceResponse<PaymentModel>> RejectPaymentAsync(int paymentId)
+    {
+        try
+        {
+            var response = await _http.PostAsync($"api/Payment/reject/{paymentId}", null);
+            var result = await response.Content.ReadFromJsonAsync<ServiceResponse<PaymentModel>>();
+            return result ?? new ServiceResponse<PaymentModel> { Status = 500, Message = "Empty response" };
+        }
+        catch (Exception ex)
+        {
+            return new ServiceResponse<PaymentModel> { Status = 500, Message = ex.Message };
         }
     }
 }

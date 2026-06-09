@@ -1,0 +1,441 @@
+﻿@page "/admin/students"
+@layout MainLayout
+@inject StudentsService studentDetailsService
+@inject ISnackbar Snackbar
+@inject NavigationManager nav
+
+<PageTitle>All Students</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h6" Style="color:#132d6e; font-weight:700;">All Students</MudText>
+        <MudText Typo="Typo.body2" Style="color:#6b7a99;">
+            Total: @_totalCount student(s) | Showing @_filteredStudents.Count() of @_totalCount
+        </MudText>
+    </MudStack>
+    <MudChip T="string" Style="background:#dcfce7; color:#065F46;">
+        <MudIcon Icon="@Icons.Material.Filled.School" Size="Size.Small" />
+        Total: @_totalCount
+    </MudChip>
+</MudStack>
+
+<!-- Search and Filter Bar -->
+<MudPaper Elevation="0" Style="border-radius:14px; border:1px solid #e2e8f4; padding:16px; margin-bottom:24px;">
+    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <MudTextField @bind-Value="_searchTerm"
+                      @bind-Value:event="oninput"
+                      Placeholder="Search by Student ID, Student #, or Name..."
+                      Variant="Variant.Outlined"
+                      Size="Size.Small"
+                      Style="min-width:200px; flex:2;"
+                      DebounceInterval="500"
+                      OnDebounceIntervalElapsed="@(() => LoadStudents())">
+            <Adornment>
+                <MudIcon Icon="@Icons.Material.Filled.Search" />
+            </Adornment>
+        </MudTextField>
+
+        <select @bind="_studentStatusFilter" @bind:after="() => { _currentPage = 1; LoadStudents(); }" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 140px;">
+            <option value="">All Student Status</option>
+            <option value="Approved">Approved</option>
+            <option value="Pending">Pending</option>
+            <option value="Rejected">Rejected</option>
+        </select>
+
+        <select @bind="_enrollmentStatusFilter" @bind:after="() => { _currentPage = 1; LoadStudents(); }" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 140px;">
+            <option value="">All Enrollment</option>
+            <option value="Enrolled">Enrolled</option>
+            <option value="Pending">Pending</option>
+        </select>
+
+        <select @bind="_paymentStatusFilter" @bind:after="() => { _currentPage = 1; LoadStudents(); }" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 140px;">
+            <option value="">All Payment</option>
+            <option value="Approved">Approved</option>
+            <option value="Pending">Pending</option>
+            <option value="Rejected">Rejected</option>
+            <option value="No Payment">No Payment</option>
+        </select>
+
+        <select @bind="_documentStatusFilter" @bind:after="() => { _currentPage = 1; LoadStudents(); }" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 140px;">
+            <option value="">All Documents</option>
+            <option value="Approved">Approved</option>
+            <option value="Pending">Pending</option>
+            <option value="Rejected">Rejected</option>
+            <option value="No Documents">No Documents</option>
+        </select>
+
+        <select @bind="_courseFilter" @bind:after="() => { _currentPage = 1; LoadStudents(); }" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 180px;">
+            <option value="">All Courses</option>
+            <option value="BS Information Technology">BS Information Technology</option>
+            <option value="BS Computer Science">BS Computer Science</option>
+            <option value="BS Accountancy">BS Accountancy</option>
+            <option value="BS Business Administration">BS Business Administration</option>
+            <option value="BS Hospitality Management">BS Hospitality Management</option>
+        </select>
+
+        <select @bind="_yearLevelFilter" @bind:after="() => { _currentPage = 1; LoadStudents(); }" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 120px;">
+            <option value="">All Years</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+        </select>
+
+        <select @bind="_studentTypeFilter" @bind:after="() => { _currentPage = 1; LoadStudents(); }" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; min-width: 120px;">
+            <option value="">All Types</option>
+            <option value="New">New</option>
+            <option value="Old">Old</option>
+        </select>
+
+        <!-- ENROLLED ONLY BUTTON -->
+        <MudButton Variant="@(_showOnlyEnrolled ? Variant.Filled : Variant.Outlined)"
+                   Style="@(_showOnlyEnrolled ? "background:#dcfce7; color:#065F46; border-color:#065F46;" : "border-color:#065F46; color:#065F46;")"
+                   Size="Size.Small"
+                   OnClick="@(() => { _showOnlyEnrolled = !_showOnlyEnrolled; _currentPage = 1; LoadStudents(); })">
+            <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" />
+            Enrolled Only
+        </MudButton>
+
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Clear"
+                   OnClick="@ClearFilters">
+            Clear
+        </MudButton>
+    </div>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_students.Count == 0)
+{
+    <MudPaper Elevation="0" Style="border-radius:14px; border:1px solid #e2e8f4; padding:48px; text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.School" Style="font-size:3rem; color:#c7d2f0;" />
+        <MudText Style="color:#6b7a99;">No students found</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudPaper Elevation="2" Style="border-radius:14px; overflow-x:auto;">
+        <MudTable Items="_filteredStudents" Hover="true" Elevation="0" Style="min-width:1400px;">
+            <HeaderContent>
+                <MudTh>Student ID</MudTh>
+                <MudTh>Student #</MudTh>
+                <MudTh>Student Name</MudTh>
+                <MudTh>Course</MudTh>
+                <MudTh>Year Level</MudTh>
+                <MudTh>Student Type</MudTh>
+                <MudTh>Student Status</MudTh>
+                <MudTh>Enrollment</MudTh>
+                <MudTh>Documents</MudTh>
+                <MudTh>Payment</MudTh>
+                <MudTh>Overall Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.StudentID</MudTd>
+                <MudTd>@context.StudentNumber</MudTd>
+                <MudTd>@context.FullName</MudTd>
+                <MudTd>@context.Course</MudTd>
+                <MudTd>@context.YearLevel</MudTd>
+                
+                <!-- Student Type -->
+                <MudTd>
+                    @if (context.StudentType == "New")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#eff6ff; color:#3b82f6;">New</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#dcfce7; color:#065F46;">Old</MudChip>
+                    }
+                </MudTd>
+                
+                <!-- Student Status -->
+                <MudTd>
+                    @if (context.StudentStatus == "Approved")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#dcfce7; color:#065F46;">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
+                            Approved
+                        </MudChip>
+                    }
+                    else if (context.StudentStatus == "Pending")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fff3cd; color:#856404;">
+                            <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Size="Size.Small" />
+                            Pending
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fee2e2; color:#991b1b;">
+                            <MudIcon Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" />
+                            Rejected
+                        </MudChip>
+                    }
+                </MudTd>
+                
+                <!-- Enrollment Status - FIXED -->
+                <MudTd>
+                    @if (context.EnrollmentStatus == "Enrolled" || context.EnrollmentStatus == "Approved")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#dcfce7; color:#065F46;">Enrolled</MudChip>
+                    }
+                    else if (context.EnrollmentStatus == "Pending")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fff3cd; color:#856404;">Pending</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fee2e2; color:#991b1b;">@context.EnrollmentStatus</MudChip>
+                    }
+                </MudTd>
+                
+                <!-- Document Status -->
+                <MudTd>
+                    @if (context.DocumentStatus == "Approved")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#dcfce7; color:#065F46;">Complete</MudChip>
+                    }
+                    else if (context.DocumentStatus == "Pending")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fff3cd; color:#856404;">Pending</MudChip>
+                    }
+                    else if (context.DocumentStatus == "Rejected")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fee2e2; color:#991b1b;">Rejected</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#f1f5f9; color:#64748b;">No Documents</MudChip>
+                    }
+                </MudTd>
+                <!-- Payment Status -->
+<MudTd>
+    @if (context.PaymentStatus == "Approved")
+    {
+        <MudChip T="string" Size="Size.Small" Style="background:#dcfce7; color:#065F46;">Paid</MudChip>
+    }
+    else if (context.PaymentStatus == "Pending")
+    {
+        <MudChip T="string" Size="Size.Small" Style="background:#fff3cd; color:#856404;">Pending</MudChip>
+    }
+    else if (context.PaymentStatus == "Rejected")
+    {
+        <MudChip T="string" Size="Size.Small" Style="background:#fee2e2; color:#991b1b;">Rejected</MudChip>
+    }
+    else
+    {
+        <MudChip T="string" Size="Size.Small" Style="background:#f1f5f9; color:#64748b;">No Payment</MudChip>
+    }
+</MudTd>
+
+                
+                <!-- Overall Status -->
+                <MudTd>
+                    @if (context.OverallStatus == "Enrolled")
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#dcfce7; color:#065F46; font-weight:bold;">
+                            <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" />
+                            ENROLLED
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Style="background:#fff3cd; color:#856404;">
+                            <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Size="Size.Small" />
+                            Pending
+                        </MudChip>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+        
+        <!-- Pagination Controls -->
+        <div style="display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; margin-bottom: 16px; padding: 8px;">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ChangePage(_currentPage - 1))" Disabled="@(_currentPage <= 1)">
+                ◀ Previous
+            </MudButton>
+            
+            <span style="font-size: 14px; color:#6b7a99;">
+                Page @_currentPage of @_totalPages
+            </span>
+            
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ChangePage(_currentPage + 1))" Disabled="@(_currentPage >= _totalPages)">
+                Next ▶
+            </MudButton>
+            
+            <div style="margin-left: 16px;">
+                <select @bind="PageSize" @bind:after="() => ChangePage(1)" style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 8px;">
+                    <option value="10">10 per page</option>
+                    <option value="20">20 per page</option>
+                    <option value="50">50 per page</option>
+                    <option value="100">100 per page</option>
+                </select>
+            </div>
+        </div>
+    </MudPaper>
+}
+
+<!-- Student Details Dialog -->
+<MudDialog @bind-IsVisible="_showDetailsDialog" Options="new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true }">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="font-weight:700;">Student Details</MudText>
+        <MudText Typo="Typo.body2" Style="color:#6b7a99;">@_selectedStudent?.FullName</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_selectedStudent != null)
+        {
+            <MudGrid>
+                <MudItem Size="6">
+                    <MudText Typo="Typo.subtitle2" Style="color:#132d6e;">Student Information</MudText>
+                    <MudDivider Class="my-2" />
+                    <MudText><strong>Student ID:</strong> @_selectedStudent.StudentID</MudText>
+                    <MudText><strong>Student #:</strong> @_selectedStudent.StudentNumber</MudText>
+                    <MudText><strong>Full Name:</strong> @_selectedStudent.FullName</MudText>
+                    <MudText><strong>Email:</strong> @_selectedStudent.Email</MudText>
+                    <MudText><strong>Contact:</strong> @_selectedStudent.ContactNumber</MudText>
+                    <MudText><strong>Student Type:</strong> @_selectedStudent.StudentType</MudText>
+                    <MudText><strong>Student Status:</strong> @_selectedStudent.StudentStatus</MudText>
+                </MudItem>
+                <MudItem Size="6">
+                    <MudText Typo="Typo.subtitle2" Style="color:#132d6e;">Academic Information</MudText>
+                    <MudDivider Class="my-2" />
+                    <MudText><strong>Course:</strong> @_selectedStudent.Course</MudText>
+                    <MudText><strong>Year Level:</strong> @_selectedStudent.YearLevel</MudText>
+                    <MudText><strong>Semester:</strong> @_selectedStudent.Semester</MudText>
+                    <MudText><strong>School Year:</strong> @_selectedStudent.SchoolYear</MudText>
+                    <MudText><strong>Enrollment Status:</strong> @_selectedStudent.EnrollmentStatus</MudText>
+                </MudItem>
+                <MudItem Size="6">
+                    <MudText Typo="Typo.subtitle2" Style="color:#132d6e;">Document Status</MudText>
+                    <MudDivider Class="my-2" />
+                    <MudText><strong>Document Status:</strong> @_selectedStudent.DocumentStatus</MudText>
+                </MudItem>
+                <MudItem Size="6">
+                    <MudText Typo="Typo.subtitle2" Style="color:#132d6e;">Payment Status</MudText>
+                    <MudDivider Class="my-2" />
+                    <MudText><strong>Payment Status:</strong> @_selectedStudent.PaymentStatus</MudText>
+                </MudItem>
+                <MudItem Size="12">
+                    <MudText Typo="Typo.subtitle2" Style="color:#132d6e;">Overall Status</MudText>
+                    <MudDivider Class="my-2" />
+                    <MudText><strong>Overall Status:</strong> @_selectedStudent.OverallStatus</MudText>
+                </MudItem>
+            </MudGrid>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="@(() => _showDetailsDialog = false)">Close</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => nav.NavigateTo($"/admin/student-documents/{_selectedStudent?.StudentID}"))">
+            View Documents
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<StudentDetailsModel> _students = new();
+    private IEnumerable<StudentDetailsModel> _filteredStudents => 
+        _showOnlyEnrolled ? _students.Where(s => s.OverallStatus == "Enrolled") : _students;
+    private bool _loading = true;
+    private int _totalCount = 0;
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private int _totalPages = 1;
+
+    // Filters
+    private string _searchTerm = "";
+    private string _studentStatusFilter = "";
+    private string _enrollmentStatusFilter = "";
+    private string _paymentStatusFilter = "";
+    private string _documentStatusFilter = "";
+    private string _courseFilter = "";
+    private string _yearLevelFilter = "";
+    private string _studentTypeFilter = "";
+    private bool _showOnlyEnrolled = false;
+
+    // Dialog
+    private bool _showDetailsDialog = false;
+    private StudentDetailsModel? _selectedStudent;
+
+    private int PageSize
+    {
+        get => _pageSize;
+        set
+        {
+            if (_pageSize != value)
+            {
+                _pageSize = value;
+                _currentPage = 1;
+                LoadStudents();
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStudents();
+    }
+
+    private async Task LoadStudents()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var response = await studentDetailsService.GetAllStudentsWithStatusAsync(
+            _searchTerm, _currentPage, _pageSize,
+            _studentStatusFilter, _enrollmentStatusFilter, _paymentStatusFilter,
+            _documentStatusFilter, _courseFilter, _yearLevelFilter, _studentTypeFilter, null);
+
+        if (response != null && response.Status == 200 && response.Data != null)
+        {
+            _students = response.Data.Students;
+            _totalCount = response.Data.TotalCount;
+            _currentPage = response.Data.CurrentPage;
+            _pageSize = response.Data.PageSize;
+            _totalPages = response.Data.TotalPages;
+        }
+        else
+        {
+            _students = new List<StudentDetailsModel>();
+            _totalCount = 0;
+            if (response != null && response.Status != 200)
+            {
+                Snackbar.Add(response.Message ?? "Error loading students", Severity.Error);
+            }
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private void ChangePage(int newPage)
+    {
+        if (newPage < 1 || newPage > _totalPages) return;
+        _currentPage = newPage;
+        LoadStudents();
+    }
+
+    private void ClearFilters()
+    {
+        _searchTerm = "";
+        _studentStatusFilter = "";
+        _enrollmentStatusFilter = "";
+        _paymentStatusFilter = "";
+        _documentStatusFilter = "";
+        _courseFilter = "";
+        _yearLevelFilter = "";
+        _studentTypeFilter = "";
+        _showOnlyEnrolled = false;
+        _currentPage = 1;
+        LoadStudents();
+        Snackbar.Add("Filters cleared", Severity.Info);
+    }
+
+    private void ViewStudentDetails(StudentDetailsModel student)
+    {
+        _selectedStudent = student;
+        _showDetailsDialog = true;
+    }
+}
